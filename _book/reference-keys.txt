@@ -374,3 +374,6 @@ break-up-your-workflow
 code-in-public
 check-out-social-media
 parting-wisdom
+ggformula
+more-from-a-solomon-kurz
+some-notes-on-coding-style-before-we-begin-four-cs

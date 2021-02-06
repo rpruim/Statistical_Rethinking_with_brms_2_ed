@@ -9,9 +9,54 @@ output:
 ```{r, echo = F, cache = F}
 knitr::opts_chunk$set(fig.retina = 2.5)
 knitr::opts_chunk$set(fig.align = "center")
+library(ggformula)
+theme_set(theme_bw())
 options(width = 100)
+use_ggformula <- TRUE
 ```
 
+## Some Notes on Coding Style before we begin: Four C's
+
+Computer code simultaneously communicates both to humans and to the computer.
+Not all code that works is equally good. Here are 4 C's to consider as you write
+your code.
+
+* **Correctness:** It is important that the code be **correct** so that the computer does what you intend.
+
+* **Clarity:** But it is also important the that code be **clear**, so that humans reading and writing
+the code can tell what it is intended to do, and easily make modifications as necessary.
+
+* **Containment:** It is also helpful if the code is appropriately **contained**, 
+to keep separate things that should be separate and together things that should be together.
+
+* **Consistency:** Finally, it is useful if your code exhibits internal
+**consistency** of style and naming conventions. There are several competing
+style guides for R. We will adopt a style guide patterned after that used by the authors
+of the **tidyverse** suite of packages.
+
+The code presented in McElreath's *Statistical Rethinking* does OK at being correct,
+it isn't as clear as it could be, does very poorly at containment, and adopts a style
+that is prone to errors.  Particular features of that code to avoid:
+
+* Renaming every data set `d`. 
+
+    It is hard to imagine why this was considered a good idea. It does not communicate well to humans
+    and it is very easy to have a different data set than the one you intend if they are all named
+    the same thing.  *Don't do this!*
+    
+* Using lots of "loose vectors".
+
+    R allows us to put vectors into lists or data frames, and the **tidyverse** provides nice functions
+    for working with them inside those containers. Furthermore, **ggformula** works best when the 
+    data being plotted is in a data frame.
+    
+* Using "base R" functions.
+
+    This is more a matter of opinion and style, but there are many newer packages that make coding
+    easier and clearer. This will impact you most if you start googling for code. Make sure you
+    find code that is in the same style as what is domenstrated here -- don't create Frankencode with
+    odd bits cobbled together from very different coding styles.
+    
 # Small Worlds and Large Worlds
 
 A while back The Oatmeal put together an [infographic on Christopher Columbus](http://theoatmeal.com/comics/columbus_day). I'm no historian and cannot vouch for its accuracy, so make of it what you will.
@@ -45,20 +90,20 @@ Other than the pipe, the other big thing to be aware of is [tibbles](https://tib
 If we're willing to code the marbles as 0 = "white" 1 = "blue", we can arrange the possibility data in a tibble as follows.
 
 ```{r, warning = F, message = F}
-d <-
+Possibilities <-
   tibble(p1 = 0,
          p2 = rep(1:0, times = c(1, 3)),
          p3 = rep(1:0, times = c(2, 2)),
          p4 = rep(1:0, times = c(3, 1)),
          p5 = 1)
 
-head(d)
+Possibilities
 ```
 
 You might depict the possibility data in a plot.
 
-```{r, fig.width = 1.25, fig.height = 1.1}
-d %>% 
+```{r, fig.width = 1.25, fig.height = 1.1, include = !use_ggformula, eval = !use_ggformula}
+Possibilities %>% 
   set_names(1:5) %>% 
   mutate(x = 1:4) %>% 
   pivot_longer(-x, names_to = "possibility") %>% 
@@ -71,13 +116,27 @@ d %>%
   theme(legend.position = "none")
 ```
 
+```{r, fig.width = 1.25, fig.height = 1.1, include = use_ggformula, eval = use_ggformula}
+Possibilities %>% 
+  set_names(1:5) %>% 
+  mutate(x = 1:4) %>% 
+  pivot_longer(-x, names_to = "possibility") %>% 
+  mutate(value = value %>% as.character()) %>% 
+  gf_point(possibility ~ x, fill = ~value, shape = 21, size = 5) %>%
+  gf_refine(
+    scale_fill_manual(values = c("white", "navy")),
+    scale_x_discrete(NULL, breaks = NULL)) %>%
+  gf_theme(legend.position = "none")
+```
+
 As a quick aside, check out Suzan Baert's blog post [*Data wrangling part 2: Transforming your columns into the right shape*](https://suzan.rbind.io/2018/02/dplyr-tutorial-2/) for an extensive discussion on `dplyr::mutate()` and `tidyr::gather()`. The `tidyr::pivot_longer()` function is an updated variant of `gather()`, which we'll be making extensive use of throughout this project. If you're new to reshaping data with pivoting, check out the vignettes [here](https://tidyr.tidyverse.org/reference/pivot_longer.html) and [here](https://tidyr.tidyverse.org/articles/pivot.html) [@PivotDataWide2020; @Pivoting2020].
 
 Here's the basic structure of the possibilities per marble draw.
 
 ```{r}
-tibble(draw    = 1:3,
-       marbles = 4) %>% 
+tibble(
+  draw    = 1:3,
+  marbles = 4) %>% 
   mutate(possibilities = marbles ^ draw) %>% 
   knitr::kable()
 ```
@@ -86,13 +145,13 @@ If you walk that out a little, you can structure the data required to approach F
 
 ```{r}
 (
-  d <-
-  tibble(position = c((1:4^1) / 4^0, 
-                      (1:4^2) / 4^1, 
-                      (1:4^3) / 4^2),
-         draw     = rep(1:3, times = c(4^1, 4^2, 4^3)),
-         fill     = rep(c("b", "w"), times = c(1, 3)) %>% 
-           rep(., times = c(4^0 + 4^1 + 4^2)))
+  Garden <-
+    tibble(position = c((1:4^1) / 4^0, 
+                        (1:4^2) / 4^1, 
+                        (1:4^3) / 4^2),
+           draw     = rep(1:3, times = c(4^1, 4^2, 4^3)),
+           fill     = rep(c("b", "w"), times = c(1, 3)) %>% 
+             rep(., times = c(4^0 + 4^1 + 4^2)))
 )
 ```
 
@@ -100,8 +159,8 @@ See what I did there with the parentheses? If you assign a value to an object in
 
 But we digress. Here's the initial plot.
 
-```{r, fig.width = 8, fig.height = 2}
-d %>% 
+```{r, fig.width = 8, fig.height = 2, include = !use_ggformula, eval = !use_ggformula}
+Garden %>% 
   ggplot(aes(x = position, y = draw, fill = fill)) +
   geom_point(shape = 21, size = 3) +
   scale_fill_manual(values  = c("navy", "white")) +
@@ -110,38 +169,50 @@ d %>%
         panel.grid.minor = element_blank())
 ```
 
+```{r, fig.width = 8, fig.height = 2, include = use_ggformula, eval = use_ggformula}
+Garden %>% 
+  gf_point(draw ~ position, fill = ~ fill, shape = 21, size = 3) %>%
+  gf_refine(
+    scale_fill_manual(values  = c("navy", "white")),
+    scale_y_continuous(breaks = 1:3)) %>%
+  gf_theme(
+    legend.position = "none",
+    panel.grid.minor = element_blank())
+```
+
 To my mind, the easiest way to connect the dots in the appropriate way is to make two auxiliary tibbles.
 
 ```{r}
 # these will connect the dots from the first and second draws
 (
-  lines_1 <-
-  tibble(x    = rep((1:4), each = 4),
-         xend = ((1:4^2) / 4),
-         y    = 1,
-         yend = 2)
-  )
+  Lines_1 <-
+    tibble(x    = rep((1:4), each = 4),
+           xend = ((1:4^2) / 4),
+           y    = 1,
+           yend = 2)
+)
 
 # these will connect the dots from the second and third draws
 (
-  lines_2 <-
-  tibble(x    = rep(((1:4^2) / 4), each = 4),
-         xend = (1:4^3) / (4^2),
-         y    = 2,
-         yend = 3)
-  )
+  Lines_2 <-
+    tibble(x    = rep(((1:4^2) / 4), each = 4),
+           xend = (1:4^3) / (4^2),
+           y    = 2,
+           yend = 3)
+)
 ```
 
-We can use the `lines_1` and `lines_2` data in the plot with two `geom_segment()` functions.
+We can use the `Lines_1` and `Lines_2` data in the plot to draw the line segments.
+<!-- with two `geom_segment()` functions. -->
 
-```{r, fig.width = 8, fig.height = 2}
-d %>% 
+```{r, fig.width = 8, fig.height = 2, include = !use_ggformula, eval = !use_ggformula}
+Garden %>% 
   ggplot(aes(x = position, y = draw)) +
-  geom_segment(data = lines_1,
+  geom_segment(data = Lines_1,
                aes(x = x, xend = xend,
                    y = y, yend = yend),
                size  = 1/3) +
-  geom_segment(data = lines_2,
+  geom_segment(data = Lines_2,
                aes(x = x, xend = xend,
                    y = y, yend = yend),
                size  = 1/3) +
@@ -153,32 +224,48 @@ d %>%
         panel.grid.minor = element_blank())
 ```
 
-We've generated the values for `position` (i.e., the $x$-axis), in such a way that they're all justified to the right, so to speak. But we'd like to center them. For `draw == 1`, we'll need to subtract 0.5 from each. For `draw == 2`, we need to reduce the scale by a factor of 4 and we'll then need to reduce the scale by another factor of 4 for `draw == 3`. The `ifelse()` function will be of use for that.
-
-```{r}
-d <-
-  d %>% 
-  mutate(denominator = ifelse(draw == 1, .5,
-                              ifelse(draw == 2, .5 / 4,
-                                     .5 / 4^2))) %>% 
-  mutate(position = position - denominator)
-
-d
+```{r, fig.width = 8, fig.height = 2, include = use_ggformula, eval = use_ggformula}
+gf_segment(y + yend ~ x + xend, size = 1/3, data = Lines_1) %>%
+  gf_segment(y + yend ~ x + xend, size = 1/3, data = Lines_2) %>%
+  gf_point(draw ~ position, fill = ~ fill, shape = 21, size = 3, 
+           data = Garden, inherit = FALSE) %>%
+  gf_refine(
+    scale_fill_manual(values  = c("navy", "white")),
+    scale_y_continuous(breaks = 1:3)) %>%
+  gf_theme(
+    legend.position  = "none", panel.grid.minor = element_blank())
 ```
 
-We'll follow the same logic for the `lines_1` and `lines_2` data.
+We've generated the values for `position` (i.e., the $x$-axis), in such a way that they're all justified to the right, so to speak. But we'd like to center them. For `draw == 1`, we'll need to subtract 0.5 from each. For `draw == 2`, we need to reduce the scale by a factor of 4 and we'll then need to reduce the scale by another factor of 4 for `draw == 3`. The `case_when()` function will be of use for that.
+
+```{r}
+Garden <-
+  Garden %>% 
+  mutate(
+    denominator = 
+      case_when(
+        draw == 1 ~ .5,
+        draw == 2 ~ .5 / 4,
+        draw == 3 ~ .5 / 4^2),
+    position = position - denominator
+  ) 
+
+Garden
+```
+
+We'll follow the same logic for the `Lines_1` and `Lines_2` data.
 
 ```{r}
 (
-  lines_1 <-
-  lines_1 %>% 
+  Lines_1 <-
+  Lines_1 %>% 
   mutate(x    = x - 0.5,
          xend = xend - 0.5 / 4^1)
 )
 
 (
-  lines_2 <-
-  lines_2 %>% 
+  Lines_2 <-
+  Lines_2 %>% 
   mutate(x    = x - 0.5 / 4^1,
          xend = xend - 0.5 / 4^2)
 )
@@ -186,14 +273,14 @@ We'll follow the same logic for the `lines_1` and `lines_2` data.
 
 Now the plot's looking closer.
 
-```{r, fig.width = 8, fig.height = 2}
-d %>% 
+```{r, fig.width = 8, fig.height = 2, include = !use_ggformula, eval = !use_ggformula}
+Garden %>% 
   ggplot(aes(x = position, y = draw)) +
-  geom_segment(data = lines_1,
+  geom_segment(data = Lines_1,
                aes(x = x, xend = xend,
                    y = y, yend = yend),
                size  = 1/3) +
-  geom_segment(data = lines_2,
+  geom_segment(data = Lines_2,
                aes(x = x, xend = xend,
                    y = y, yend = yend),
                size  = 1/3) +
@@ -205,16 +292,30 @@ d %>%
         panel.grid.minor = element_blank())
 ```
 
+```{r, fig.width = 8, fig.height = 2, include = use_ggformula, eval = use_ggformula}
+gf_segment(y + yend ~ x + xend, data = Lines_1, size  = 1/3) %>% 
+  gf_segment(y + yend ~ x + xend, data = Lines_2, size  = 1/3) %>% 
+  gf_point(draw ~ position, fill = ~ fill, data = Garden, inherit = FALSE,
+             shape = 21, size = 3) %>%
+  gf_refine(
+    scale_fill_manual(values  = c("navy", "white")),
+    scale_y_continuous(breaks = 1:3)
+  ) %>%
+  gf_theme(
+    legend.position  = "none",
+    panel.grid.minor = element_blank())
+```
+
 For the final step, we'll use `coord_polar()` to change the [coordinate system](http://sape.inf.usi.ch/quick-reference/ggplot2/coord), giving the plot a mandala-like feel.
 
-```{r, fig.width = 4, fig.height = 4}
-d %>% 
+```{r, fig.width = 4, fig.height = 4, include = !use_ggformula, eval = !use_ggformula}
+Garden %>% 
   ggplot(aes(x = position, y = draw)) +
-  geom_segment(data = lines_1,
+  geom_segment(data = Lines_1,
                aes(x = x, xend = xend,
                    y = y, yend = yend),
                size = 1/3) +
-  geom_segment(data = lines_2,
+  geom_segment(data = Lines_2,
                aes(x = x, xend = xend,
                    y = y, yend = yend),
                size = 1/3) +
@@ -228,34 +329,39 @@ d %>%
         panel.grid = element_blank())
 ```
 
+```{r, fig.width = 4, fig.height = 4, include = use_ggformula, eval = use_ggformula}
+last_plot() %>%
+  gf_refine(coord_polar())
+```
+
 To make our version of Figure 2.3, we'll have to add an index to tell us which paths remain logically valid after each choice. We'll call the index `remain`.
 
-```{r, fig.width = 4, fig.height = 4}
-lines_1 <-
-  lines_1 %>% 
+```{r, fig.width = 4, fig.height = 4, include = !use_ggformula, eval = !use_ggformula}
+Lines_1 <-
+  Lines_1 %>% 
   mutate(remain = c(rep(0:1, times = c(1, 3)),
                     rep(0,   times = 4 * 3)))
-lines_2 <-
-  lines_2 %>% 
+Lines_2 <-
+  Lines_2 %>% 
   mutate(remain = c(rep(0,   times = 4),
                     rep(1:0, times = c(1, 3)) %>% rep(., times = 3),
                     rep(0,   times = 12 * 4)))
-d <-
-  d %>% 
+Garden <-
+  Garden %>% 
   mutate(remain = c(rep(1:0, times = c(1, 3)),
                     rep(0:1, times = c(1, 3)),
                     rep(0,   times = 4 * 4),
                     rep(1:0, times = c(1, 3)) %>% rep(., times = 3),
                     rep(0,   times = 12 * 4))) 
 # finally, the plot:
-d %>% 
+Garden %>% 
   ggplot(aes(x = position, y = draw)) +
-  geom_segment(data = lines_1,
+  geom_segment(data = Lines_1,
                aes(x = x, xend = xend,
                    y = y, yend = yend,
                    alpha = remain %>% as.character()),
                size = 1/3) +
-  geom_segment(data = lines_2,
+  geom_segment(data = Lines_2,
                aes(x = x, xend = xend,
                    y = y, yend = yend,
                    alpha = remain %>% as.character()),
@@ -272,6 +378,45 @@ d %>%
         panel.grid = element_blank())
 ```
 
+
+```{r, fig.width = 4, fig.height = 4, include = use_ggformula, eval = use_ggformula}
+Lines_1 <-
+  Lines_1 %>% 
+  mutate(remain = c(rep(0:1, times = c(1, 3)),
+                    rep(0,   times = 4 * 3)))
+Lines_2 <-
+  Lines_2 %>% 
+  mutate(remain = c(rep(0,   times = 4),
+                    rep(1:0, times = c(1, 3)) %>% rep(., times = 3),
+                    rep(0,   times = 12 * 4)))
+Garden <-
+  Garden %>% 
+  mutate(remain = c(rep(1:0, times = c(1, 3)),
+                    rep(0:1, times = c(1, 3)),
+                    rep(0,   times = 4 * 4),
+                    rep(1:0, times = c(1, 3)) %>% rep(., times = 3),
+                    rep(0,   times = 12 * 4))) 
+# finally, the plot:
+gf_segment(y + yend ~ x + xend, data = Lines_1,
+           alpha = ~ as.character(remain), size = 1/3) %>% 
+  gf_segment(y + yend ~ x + xend, data = Lines_2,
+             alpha = ~ as.character(remain), size = 1/3) %>% 
+  gf_point(draw ~ position, data = Garden, inherit = FALSE,
+           fill = ~ fill,  alpha = ~ as.character(remain), 
+           shape = 21, size = 4) %>%
+  # it's the alpha parameter that makes elements semitransparent
+  gf_refine(
+    scale_fill_manual(values = c("navy", "white")),
+    scale_alpha_manual(values = c(1/5, 1)), 
+    scale_x_continuous(NULL, limits = c(0, 4), breaks = NULL), 
+    scale_y_continuous(NULL, limits = c(0.75, 3), breaks = NULL),
+    coord_polar() 
+  ) %>%
+  gf_theme(legend.position = "none",
+           panel.grid = element_blank())
+```
+
+
 Letting "w" = a white dot and "b" = a blue dot, we might recreate the table in the middle of page 23 like so.
 
 ```{r}
@@ -284,7 +429,7 @@ n_white <- function(x) {
   rowSums(x == "w")
 }
 
-t <-
+Table23 <-
   # for the first four columns, `p_` indexes position
   tibble(p_1 = rep(c("w", "b"), times = c(1, 4)),
          p_2 = rep(c("w", "b"), times = c(2, 3)),
@@ -294,24 +439,24 @@ t <-
          `draw 2: white` = n_white(.),
          `draw 3: blue`  = n_blue(.)) %>% 
   mutate(`ways to produce` = `draw 1: blue` * `draw 2: white` * `draw 3: blue`)
-t %>% 
+Table23 %>% 
   knitr::kable()
 ```
 
 We'll need new data for Figure 2.4. Here's the initial primary data, `d`.
 
 ```{r}
-d <-
+Garden2 <-
   tibble(position = c((1:4^1) / 4^0, 
                       (1:4^2) / 4^1, 
                       (1:4^3) / 4^2),
          draw     = rep(1:3, times = c(4^1, 4^2, 4^3)))
 
 (
-  d <-
-  d %>% 
+  Garden2 <-
+  Garden2 %>% 
   bind_rows(
-    d, d
+    Garden2, Garden2
   ) %>% 
   # here are the fill colors
   mutate(fill = c(rep(c("w", "b"), times = c(1, 3)) %>% rep(., times = c(4^0 + 4^1 + 4^2)),
@@ -331,7 +476,7 @@ d <-
 )
 ```
 
-Both `lines_1` and `lines_2` require adjustments for `x` and `xend`. Our current approach is a nested `ifelse()`. Rather than copy and paste that multi-line `ifelse()` code for all four, let's wrap it in a compact function, which we'll call `move_over()`.
+Both `Lines_1` and `Lines_2` require adjustments for `x` and `xend`. Our current approach is a nested `ifelse()`. Rather than copy and paste that multi-line `ifelse()` code for all four, let's wrap it in a compact function, which we'll call `move_over()`.
 
 ```{r}
 move_over <- function(position, index) {
@@ -346,11 +491,11 @@ move_over <- function(position, index) {
 
 If you're new to making your own **R** functions, check out [Chapter 19](http://r4ds.had.co.nz/functions.html) of *R4DS* or [Chapter 14](https://bookdown.org/rdpeng/rprogdatascience/functions.html) of *R programming for data science* [@pengProgrammingDataScience2019].
 
-Anyway, now we'll make our new `lines_1` and `lines_2` data, for which we'll use `move_over()` to adjust their `x` and `xend` positions to the correct spots.
+Anyway, now we'll make our new `Lines_1` and `Lines_2` data, for which we'll use `move_over()` to adjust their `x` and `xend` positions to the correct spots.
 
 ```{r}
 (
-  lines_1 <-
+  Lines_1 <-
   tibble(x    = rep((1:4), each = 4) %>% rep(., times = 3),
          xend = ((1:4^2) / 4)        %>% rep(., times = 3),
          y    = 1,
@@ -365,7 +510,7 @@ Anyway, now we'll make our new `lines_1` and `lines_2` data, for which we'll use
 )
 
 (
-  lines_2 <-
+  Lines_2 <-
   tibble(x    = rep(((1:4^2) / 4), each = 4)  %>% rep(., times = 3),
          xend = (1:4^3 / 4^2)                 %>% rep(., times = 3),
          y    = 2,
@@ -383,8 +528,8 @@ Anyway, now we'll make our new `lines_1` and `lines_2` data, for which we'll use
 For the last data wrangling step, we add the `remain` indices to help us determine which parts to make semitransparent. I'm not sure of a slick way to do this, so these are the result of brute force counting.
 
 ```{r}
-d <- 
-  d %>% 
+Garden2 <- 
+  Garden2 %>% 
   mutate(remain = c(#pie_index == "a"
                     rep(0:1, times = c(1, 3)),
                     rep(0,   times = 4),
@@ -407,8 +552,8 @@ d <-
                     )
          )
 
-lines_1 <-
-  lines_1 %>% 
+Lines_1 <-
+  Lines_1 %>% 
   mutate(remain = c(rep(0,   times = 4),
                     rep(1:0, times = c(1, 3)) %>% rep(., times = 3),
                     rep(0,   times = 4 * 2),
@@ -418,8 +563,8 @@ lines_1 <-
                     )
          )
 
-lines_2 <-
-  lines_2 %>% 
+Lines_2 <-
+  Lines_2 %>% 
   mutate(remain = c(rep(0,   times = 4 * 4),
                     rep(c(0, 1, 0), times = c(1, 3, 4 * 3)) %>% rep(., times = 3),
                     rep(0,   times = 4 * 8),
@@ -433,16 +578,16 @@ lines_2 <-
 
 We're finally ready to plot our Figure 2.4.
 
-```{r, fig.width = 7, fig.height = 7}
-d %>% 
+```{r, fig.width = 7, fig.height = 7, include = !use_ggformula, eval = !use_ggformula}
+Garden2 %>% 
   ggplot(aes(x = position, y = draw)) +
   geom_vline(xintercept = c(0, 4, 8), color = "white", size = 2/3) +
-  geom_segment(data = lines_1,
+  geom_segment(data = Lines_1,
                aes(x = x, xend = xend,
                    y = y, yend = yend,
                    alpha = remain %>% as.character()),
                size = 1/3) +
-  geom_segment(data = lines_2,
+  geom_segment(data = Lines_2,
                aes(x = x, xend = xend,
                    y = y, yend = yend,
                    alpha = remain %>% as.character()),
@@ -459,6 +604,32 @@ d %>%
         panel.grid = element_blank())
 ```
 
+```{r, fig.width = 7, fig.height = 7, include = use_ggformula, eval = use_ggformula}
+gf_rect(0.75 + 3.5 ~ 0 + 4, fill = "navy", alpha = 0.2, inherit = FALSE) %>%
+gf_rect(0.75 + 3.5 ~ 4 + 8, fill = "forestgreen", alpha = 0.2, inherit = FALSE) %>%
+gf_rect(0.75 + 3.5 ~ 8 + 12, fill = "red", alpha = 0.2, inherit = FALSE) %>%
+# gf_vline(xintercept = ~ c(0, 4, 8), color = "white", size = 2/3, data = NA) %>% 
+  gf_segment(y + yend ~ x + xend, data = Lines_1,
+             alpha = ~ as.character(remain),  size = 1/3) %>% 
+  gf_segment(y + yend ~ x + xend, data = Lines_2,
+             alpha = ~ as.character(remain), size = 1/3) %>%
+  gf_segment(y + yend ~ x + xend, data = Lines_2,
+             alpha = ~ as.character(remain), size = 1/3) %>%
+  gf_point(draw ~ position, data = Garden2, inherit = FALSE,
+           fill = ~ fill, size = ~ draw, 
+           alpha = ~ as.character(remain), shape = 21) %>%
+  gf_refine(
+    scale_fill_manual(values = c("navy", "white")),
+    scale_size_continuous(range = c(3, 1.5)),
+    scale_alpha_manual(values = c(0.2, 1)),
+    scale_x_continuous(NULL, limits = c(0, 12), breaks = NULL),
+    scale_y_continuous(NULL, limits = c(0.5, 3.5), breaks = NULL),
+   coord_polar()
+  ) %>%
+  gf_theme(theme_void()) %>%
+  gf_theme(legend.position = "none")
+```
+
 ### Combining other information.
 
 > We may have additional information about the relative plausibility of each conjecture. This information could arise from knowledge of how the contents of the bag were generated. It could also arise from previous data. Whatever the source, it would help to have a way to combine different sources of information to update the plausibilities. Luckily there is a natural solution: Just multiply the counts. (p. 25)
@@ -466,28 +637,28 @@ d %>%
 Here's a quick version of the table in the middle of page 25.
 
 ```{r}
-t <-
-  t %>% 
+Table25 <-
+  Table23 %>% 
   rename(`previous counts` = `ways to produce`,
          `ways to produce` = `draw 1: blue`) %>% 
   select(p_1:p_4, `ways to produce`, `previous counts`) %>% 
   mutate(`new count` = `ways to produce` * `previous counts`)
 
-t %>% 
+Table25 %>% 
   knitr::kable()
 ```
 
 We might update to reproduce the table a the top of page 26, like this.
 
 ```{r}
-t <-
-  t %>% 
+Table26 <-
+  Table25 %>% 
   select(p_1:p_4, `new count`) %>% 
   rename(`prior count`   = `new count`) %>% 
   mutate(`factory count` = c(0, 3:0)) %>% 
   mutate(`new count`     = `prior count` * `factory count`)
 
-t %>% 
+Table26 %>% 
   knitr::kable()
 ```
 
@@ -532,7 +703,7 @@ $$\text{plausibility of } p \text{ after } D_\text{new} = \frac{\text{ ways } p 
 You might make a version of the table in the middle of page 27 like this.
 
 ```{r}
-t %>% 
+Table26 %>% 
   select(p_1:p_4) %>% 
   mutate(p                      = seq(from = 0, to = 1, by = .25),
          `ways to produce data` = c(0, 3, 8, 9, 0)) %>% 
@@ -552,7 +723,10 @@ ways / sum(ways)
 We might save our globe-tossing data in a tibble.
 
 ```{r}
-(d <- tibble(toss = c("w", "l", "w", "w", "w", "l", "w", "l", "w")))
+(
+  Globe <- 
+    tibble(toss = c("w", "l", "w", "w", "w", "l", "w", "l", "w"))
+)
 ```
 
 ### A data story.
@@ -565,23 +739,25 @@ Here we'll add the cumulative number of trials, `n_trials`, and the cumulative n
 
 ```{r}
 (
-  d <-
-  d %>% 
-  mutate(n_trials  = 1:9,
-         n_success = cumsum(toss == "w"))
-  )
+  Globe <-
+    Globe %>% 
+    mutate(n_trials  = 1:9,
+           n_success = cumsum(toss == "w"))
+)
 ```
 
 Fair warning: We don't learn the skills for making Figure 2.5 until later in the chapter. So consider the data wrangling steps in this section as something of a preview.
 
-```{r, fig.width = 6, fig.height = 5}
+```{r, fig.width = 6, fig.height = 5, include = !use_ggformula, eval = !use_ggformula}
 sequence_length <- 50
 
-d %>% 
+Globe %>% 
   expand(nesting(n_trials, toss, n_success), 
          p_water = seq(from = 0, to = 1, length.out = sequence_length)) %>% 
   group_by(p_water) %>% 
- # you can learn more about lagging here: https://www.rdocumentation.org/packages/stats/versions/3.5.1/topics/lag or here: https://dplyr.tidyverse.org/reference/lead-lag.html
+ # you can learn more about lagging here:
+ # * https://www.rdocumentation.org/packages/stats/versions/3.5.1/topics/lag 
+ # * https://dplyr.tidyverse.org/reference/lead-lag.html
   mutate(lagged_n_trials  = lag(n_trials, k = 1),
          lagged_n_success = lag(n_success, k = 1)) %>% 
   ungroup() %>% 
@@ -608,6 +784,44 @@ d %>%
   scale_y_continuous("plausibility", breaks = NULL) +
   theme(panel.grid = element_blank()) +
   facet_wrap(~strip, scales = "free_y")
+```
+
+```{r, fig.width = 6, fig.height = 5, include = use_ggformula, eval = use_ggformula}
+sequence_length <- 50
+
+Globe %>% 
+  expand(nesting(n_trials, toss, n_success), 
+         p_water = seq(from = 0, to = 1, length.out = sequence_length)) %>% 
+  group_by(p_water) %>% 
+ # you can learn more about lagging at one of these places:
+ # * https://www.rdocumentation.org/packages/stats/versions/3.5.1/topics/lag 
+ # * https://dplyr.tidyverse.org/reference/lead-lag.html
+  mutate(lagged_n_trials  = lag(n_trials, k = 1),
+         lagged_n_success = lag(n_success, k = 1)) %>% 
+  ungroup() %>% 
+  mutate(prior      = ifelse(n_trials == 1, .5,
+                             dbinom(x    = lagged_n_success, 
+                                    size = lagged_n_trials, 
+                                    prob = p_water)),
+         likelihood = dbinom(x    = n_success, 
+                             size = n_trials, 
+                             prob = p_water),
+         strip      = str_c("n = ", n_trials)) %>% 
+  # the next three lines allow us to normalize the prior and the likelihood, 
+  # putting them both in a probability metric 
+  group_by(n_trials) %>% 
+  mutate(prior      = prior / sum(prior),
+         likelihood = likelihood / sum(likelihood)) %>%   
+  
+  # plot!
+  gf_line(prior ~ p_water, linetype = 2) %>%
+  gf_line(likelihood ~ p_water) %>%
+  gf_facet_wrap( ~ strip, scales = "free_y") %>%
+  gf_refine(
+    scale_x_continuous("proportion water", breaks = c(0, .5, 1)),
+    scale_y_continuous("plausibility", breaks = NULL) 
+  ) %>%
+  gf_theme(theme_void())
 ```
 
 If it wasn't clear in the code, the dashed curves are normalized prior densities. The solid ones are normalized likelihoods. If you don't normalize (i.e., divide the density by the sum of the density), their respective heights don't match up with those in the text. Furthermore, it’s the normalization that makes them directly comparable.
@@ -666,13 +880,21 @@ dbinom(x = 6, size = 9, prob = .5)
 
 McElreath suggested we change the values of `prob`. Here is a way to do so over the parameter space, $[0, 1]$.
 
-```{r, fig.width = 3, fig.height = 2}
+```{r, fig.width = 3, fig.height = 2, include = !use_ggformula, eval = !use_ggformula}
 tibble(prob = seq(from = 0, to = 1, by = .01)) %>% 
   ggplot(aes(x = prob, y = dbinom(x = 6, size = 9, prob = prob))) +
   geom_line() +
   labs(x = "probability",
        y = "binomial likelihood") +
   theme(panel.grid = element_blank())
+```
+
+```{r, fig.width = 3, fig.height = 2, include = use_ggformula, eval = use_ggformula}
+gf_fun(dbinom(x = 6, size = 9, prob = p) ~ p, xlim = c(0, 1)) %>%
+  gf_labs(
+    x = "probability",
+    y = "binomial likelihood") %>%
+  gf_theme(panel.grid = element_blank())
 ```
 
 ##### Overthinking: Names and probability distributions. 
@@ -688,14 +910,16 @@ tibble(prob = seq(from = 0, to = 1, by = .01)) %>%
 McElreath said that "for a uniform prior from $a$ to $b$, the probability of any point in the interval is $1 / (b - a)$" (p. 35). Let's try that out. To keep things simple, we'll hold $a$ constant while varying the values for $b$.
 
 ```{r}
-tibble(a = 0,
-       b = c(1, 1.5, 2, 3, 9)) %>% 
+tibble(
+  a = 0,
+  b = c(1, 1.5, 2, 3, 9)
+) %>% 
   mutate(prob = 1 / (b - a))
 ```
 
 I like to verify things with plots.
 
-```{r, fig.width = 8, fig.height = 2}
+```{r, fig.width = 8, fig.height = 2, include = !use_ggformula, eval = !use_ggformula}
 tibble(a = 0,
        b = c(1, 1.5, 2, 3, 9)) %>% 
   expand(nesting(a, b), parameter_space = seq(from = 0, to = 9, length.out = 500)) %>% 
@@ -712,9 +936,27 @@ tibble(a = 0,
   facet_wrap(~b, ncol = 5)
 ```
 
-As we'll learn much later in the project, the $\operatorname{Uniform}(0, 1)$ distribution is special in that we can also express it as the beta distribution for which $\alpha = 1 \text{ and } \beta = 1$. E.g.,
+```{r, fig.width = 8, fig.height = 2, include = use_ggformula, eval = use_ggformula}
+tibble(a = 0,
+       b = c(1, 1.5, 2, 3, 9)) %>% 
+  expand(nesting(a, b), parameter_space = seq(from = 0, to = 9, length.out = 500)) %>% 
+  mutate(prob = dunif(parameter_space, a, b),
+         b    = str_c("b = ", b)) %>% 
+  gf_ribbon(0 + prob ~ parameter_space) %>%
+  gf_facet_wrap( ~ b, ncol = 5) %>%
+  gf_refine(
+    scale_x_continuous(breaks = c(0, 1:3, 9)),
+    scale_y_continuous(breaks = c(0, 1/9, 1/3, 1/2, 2/3, 1),
+                         labels = c("0", "1/9", "1/3", "1/2", "2/3", "1"))
+  ) %>%
+  gf_theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()) 
+```
 
-```{r, fig.width = 2.5, fig.height = 2}
+As we'll learn much later in the project, the $\operatorname{Unif}(0, 1)$ distribution is special in that we can also express it as the beta distribution for which $\alpha = 1 \text{ and } \beta = 1$. E.g.,
+
+```{r, fig.width = 2.5, fig.height = 2, include = !use_ggformula, eval = !use_ggformula}
 tibble(parameter_space = seq(from = 0, to = 1, length.out = 50)) %>% 
   mutate(prob = dbeta(parameter_space, 1, 1)) %>% 
   
@@ -723,6 +965,14 @@ tibble(parameter_space = seq(from = 0, to = 1, length.out = 50)) %>%
   scale_y_continuous("density", limits = c(0, 2)) +
   ggtitle(expression("This is beta"*(1*", "*1))) +
   theme(panel.grid = element_blank())
+```
+
+
+```{r, fig.width = 2.5, fig.height = 2, include = use_ggformula, eval = use_ggformula}
+gf_dist("beta", shape1 = 1, shape2 = 1, geom = "area") %>%
+  gf_labs(title = expression("This is beta"*(1*", "*1))) %>%
+  gf_lims(y = c(0, 2)) %>%
+  gf_theme(panel.grid = element_blank())
 ```
 
 #### Rethinking: Datum or parameter?
@@ -735,13 +985,13 @@ For more in this topic, check out McElreath's lecture, [*Understanding Bayesian 
 
 We can now describe our observed variables, $w$ and $l$, with parameters within the binomial likelihood, our shorthand notation for which is
 
-$$w \sim \operatorname{Binomial}(n, p),$$
+$$w \sim \operatorname{Binom}(n, p),$$
 
 where $n = w + l$. Our binomial likelihood contains a parameter for an unobserved variable, $p$. Parameters in Bayesian models are assigned priors and we can report our prior for $p$ as
 
-$$p \sim \operatorname{Uniform}(0, 1),$$
+$$p \sim \operatorname{Unif}(0, 1),$$
 
-which expresses the model assumption that the entire range of possible values for $p$, $[0, 1$, are equally plausible. 
+which expresses the model assumption that the entire range of possible values for $p$, $[0, 1]$, are equally plausible. 
 
 ## Making the model go
 
@@ -764,30 +1014,36 @@ The average probability of the data is often called the "evidence" or the "avera
 ```{r}
 sequence_length <- 1e3
 
-d <-
-  tibble(probability = seq(from = 0, to = 1, length.out = sequence_length)) %>% 
-  expand(probability, row = c("flat", "stepped", "Laplace")) %>% 
-  arrange(row, probability) %>% 
-  mutate(prior = ifelse(row == "flat", 1,
-                        ifelse(row == "stepped", rep(0:1, each = sequence_length / 2),
-                               exp(-abs(probability - 0.5) / .25) / ( 2 * 0.25))),
-         likelihood = dbinom(x = 6, size = 9, prob = probability)) %>% 
-  group_by(row) %>% 
+Fig2.6 <-
+  expand_grid(
+    prior_name = c("flat", "stepped", "Laplace"),
+    probability = seq(from = 0, to = 1, length.out = sequence_length)
+  ) %>%
+  mutate(
+    prior = 
+      case_when(
+        prior_name == "flat"    ~  1,
+        prior_name == "stepped" ~ (probability >= 0.5) * 1,
+        prior_name == "Laplace" ~ exp(-abs(probability - 0.5) / .25) / ( 2 * 0.25)),
+    likelihood = dbinom(x = 6, size = 9, prob = probability)) %>% 
+  group_by(prior_name) %>% 
   mutate(posterior = prior * likelihood / sum(prior * likelihood)) %>% 
   pivot_longer(prior:posterior)  %>% 
   ungroup() %>% 
-  mutate(name = factor(name, levels = c("prior", "likelihood", "posterior")),
-         row  = factor(row, levels = c("flat", "stepped", "Laplace")))
+  mutate(
+    name = factor(name, levels = c("prior", "likelihood", "posterior")),
+    prior_name = factor(prior_name, levels = c("flat", "stepped", "Laplace"))
+  )
 ```
 
 To learn more about `dplyr::arrange()`, chech out [*R4DS*, Chapter 5.3](http://r4ds.had.co.nz/transform.html#arrange-rows-with-arrange).
 
 In order to avoid unnecessary facet labels for the rows, it was easier to just make each column of the plot separately. We can then use the elegant and powerful syntax from [Thomas Lin Pedersen](https://twitter.com/thomasp85)'s [-@R-patchwork] [**patchwork** package](https://patchwork.data-imaginist.com/) to combine them.
 
-```{r, fig.width = 6, fig.height = 5, warning = F, message = F}
+```{r, fig.width = 6, fig.height = 5, warning = F, message = F, include = !use_ggformula, eval = !use_ggformula}
 p1 <-
-  d %>%
-  filter(row == "flat") %>% 
+  Fig2.6 %>%
+  filter(prior_name == "flat") %>% 
   ggplot(aes(x = probability, y = value)) +
   geom_line() +
   scale_x_continuous(NULL, breaks = NULL) +
@@ -796,8 +1052,8 @@ p1 <-
   facet_wrap(~name, scales = "free_y")
 
 p2 <-
-  d %>%
-  filter(row == "stepped") %>% 
+  Fig2.6 %>%
+  filter(prior_name == "stepped") %>% 
   ggplot(aes(x = probability, y = value)) +
   geom_line() +
   scale_x_continuous(NULL, breaks = NULL) +
@@ -808,8 +1064,8 @@ p2 <-
   facet_wrap(~name, scales = "free_y")
 
 p3 <-
-  d %>%
-  filter(row == "Laplace") %>% 
+  Fig2.6 %>%
+  filter(prior_name == "Laplace") %>% 
   ggplot(aes(x = probability, y = value)) +
   geom_line() +
   scale_x_continuous(NULL, breaks = c(0, .5, 1)) +
@@ -821,6 +1077,39 @@ p3 <-
 
 library(patchwork)
 
+p1 / p2 / p3
+```
+
+```{r, fig.width = 6, fig.height = 5, warning = F, message = F, include = use_ggformula, eval = use_ggformula}
+Fig2.6 %>% 
+  gf_line(value ~ probability) %>%
+  gf_facet_wrap( prior_name ~ name, scales = "free_y") %>%
+  gf_refine(
+    scale_y_continuous(NULL, breaks = NULL) 
+  ) %>%
+  gf_theme(panel.grid = element_blank())
+```
+
+```{r, fig.width = 6, fig.height = 5, warning = F, message = F, include = FALSE && use_ggformula, eval = use_ggformula}
+p1 <-
+  Fig2.6 %>% filter(prior_name == "flat") %>%
+  gf_line(value ~ probability) %>%
+  gf_facet_wrap( ~ name, scales = "free") %>%
+  gf_theme(panel.grid = element_blank())
+
+p2 <-
+  Fig2.6 %>% filter(prior_name == "stepped") %>%
+  gf_line(value ~ probability) %>%
+  gf_facet_wrap( ~ name, scales = "free") %>%
+  gf_theme(panel.grid = element_blank())
+
+p3 <-
+  Fig2.6 %>% filter(prior_name == "Laplace") %>%
+  gf_line(value ~ probability) %>%
+  gf_facet_wrap( ~ name, scales = "free") %>%
+  gf_theme(panel.grid = element_blank())
+
+library(patchwork)
 p1 / p2 / p3
 ```
 
@@ -849,22 +1138,21 @@ Continuing on with our globe-tossing example,
 We just employed grid approximation over the last figure. To get nice smooth lines, we computed the posterior over 1,000 evenly-spaced points on the probability space. Here we'll prepare for Figure 2.7 with 20.
 
 ```{r}
-(
-  d <-
-    tibble(p_grid = seq(from = 0, to = 1, length.out = 20),      # define grid
+Grid1 <-
+    expand_grid(p = seq(from = 0, to = 1, length.out = 20),      # define grid
            prior  = 1) %>%                                       # define prior
-    mutate(likelihood = dbinom(6, size = 9, prob = p_grid)) %>%  # compute likelihood at each value in grid
+    mutate(likelihood = dbinom(6, size = 9, prob = p)) %>%       # compute likelihood at each value in grid
     mutate(unstd_posterior = likelihood * prior) %>%             # compute product of likelihood and prior
     mutate(posterior = unstd_posterior / sum(unstd_posterior))   # standardize the posterior, so it sums to 1
-)
+Grid1
 ```
 
 Here's the code for the right panel of Figure 2.7.
 
-```{r}
+```{r include = !use_ggformula, eval = !use_ggformula}
 p1 <-
-  d %>% 
-  ggplot(aes(x = p_grid, y = posterior)) +
+  Grid1 %>% 
+  ggplot(aes(x = p, y = posterior)) +
   geom_point() +
   geom_line() +
   labs(subtitle = "20 points",
@@ -873,23 +1161,51 @@ p1 <-
   theme(panel.grid = element_blank())
 ```
 
+```{r include = use_ggformula, eval = use_ggformula}
+p1 <-
+  Grid1 %>% 
+  gf_line(posterior ~ p) %>%
+  gf_point() %>%
+  gf_labs(subtitle = "20 points",
+       x = "probability of water",
+       y = "posterior probability") %>%
+  gf_theme(panel.grid = element_blank())
+```
+
+
 Now here's the code for the left hand panel of Figure 2.7.
 
 ```{r}
+Grid2 <-
+    expand_grid(p = seq(from = 0, to = 1, length.out = 5),       # define grid
+           prior  = 1) %>%                                       # define prior
+    mutate(likelihood = dbinom(6, size = 9, prob = p)) %>%       # compute likelihood at each value in grid
+    mutate(unstd_posterior = likelihood * prior) %>%             # compute product of likelihood and prior
+    mutate(posterior = unstd_posterior / sum(unstd_posterior))   # standardize the posterior, so it sums to 1
+```
+
+```{r include = !use_ggformula, eval = !use_ggformula}
 p2 <-
-  tibble(p_grid = seq(from = 0, to = 1, length.out = 5),
-         prior  = 1) %>%
-  mutate(likelihood = dbinom(6, size = 9, prob = p_grid)) %>%
-  mutate(unstd_posterior = likelihood * prior) %>%
-  mutate(posterior = unstd_posterior / sum(unstd_posterior)) %>% 
+  Grid2 %>%
   
-  ggplot(aes(x = p_grid, y = posterior)) +
+  ggplot(aes(x = p, y = posterior)) +
   geom_point() +
   geom_line() +
   labs(subtitle = "5 points",
        x = "probability of water",
        y = "posterior probability") +
   theme(panel.grid = element_blank())
+```
+
+```{r include = use_ggformula, eval = use_ggformula}
+p2 <-
+  Grid2 %>%
+  gf_line(posterior ~ p) %>%
+  gf_point() %>%
+  gf_labs(subtitle = "5 points",
+       x = "probability of water",
+       y = "posterior probability") %>%
+  gf_theme(panel.grid = element_blank())
 ```
 
 Here we combine them and plot!
@@ -901,36 +1217,64 @@ p2 + p1 + plot_annotation(title = "More grid points make for smoother approximat
 In his **R** code 2.5 box, McElreath encouraged us to redo those plots with the two new kinds of priors.
 
 ```{r, eval = F}
-prior <- ifelse( p_grid < 0.5 , 0 , 1 ) 
-prior <- exp( -5*abs( p_grid - 0.5 ) )
+prior <- ifelse( p < 0.5 , 0 , 1 ) 
+prior <- exp( -5 * abs( p - 0.5 ) )
 ```
+
+That first prior can also be coded as
+
+```{r, eval = FALSE}
+prior <- (p < 0.5) * 1
+```
+
+The logical is turned into 0 or 1 when multiplied by 1.
 
 Here's a condensed way to make the four plots all at once.
 
 ```{r, fig.width = 6, fig.height = 5}
 # make the data
-tibble(n_points = c(5, 20)) %>% 
-  mutate(p_grid = map(n_points, ~seq(from = 0, to = 1, length.out = .))) %>% 
-  unnest(p_grid) %>% 
-  expand(nesting(n_points, p_grid),
-         priors = c("ifelse(p_grid < 0.5, 0, 1)", "exp(-5 * abs(p_grid - 0.5))")) %>% 
-  mutate(prior = ifelse(priors == "ifelse(p_grid < 0.5, 0, 1)", 
-                        ifelse(p_grid < 0.5, 0, 1),
-                        exp(-5 * abs(p_grid - 0.5)))) %>% 
-  mutate(likelihood = dbinom(6, size = 9, prob = p_grid)) %>% 
-  mutate(posterior = likelihood * prior / sum(likelihood * prior)) %>% 
-  mutate(n_points = str_c("# points = ", n_points),
-         priors   = str_c("prior = ", priors)) %>% 
-  
-  # plot!
-  ggplot(aes(x = p_grid, y = posterior)) +
+Grids <-
+  expand_grid(
+    n_points = c(5, 20),
+    prior_label = c("ifelse(p < 0.5, 0, 1)", "exp(-5 * abs(p - 0.5))")
+    ) %>% 
+  mutate(p = map(n_points, ~ seq(from = 0, to = 1, length.out = .))) %>% 
+  unnest(p) %>% 
+  mutate(
+    prior = 
+      ifelse(prior_label == "ifelse(p < 0.5, 0, 1)", 
+             ifelse(p < 0.5, 0, 1),
+             exp(-5 * abs(p - 0.5))),
+    likelihood = dbinom(6, size = 9, prob = p),
+    posterior = likelihood * prior / sum(likelihood * prior),
+    n_points = str_c("# points = ", n_points),
+    priors   = str_c("prior = ", prior_label)) 
+
+Grids %>%
+  group_by(prior_label, n_points) %>% tally()
+```
+
+```{r include = !use_ggformula, eval = !use_ggformula}
+Grids %>%
+  ggplot(aes(x = p, y = posterior)) +
   geom_line() +
   geom_point() +
-  labs(subtitle = "5 points",
+  labs(
        x = "probability of water",
        y = "posterior probability") +
   theme(panel.grid = element_blank()) +
-  facet_grid(n_points~priors, scales = "free")
+  facet_grid(n_points ~ prior_label, scales = "free")
+```
+
+```{r include = use_ggformula, eval = use_ggformula}
+Grids %>%
+  gf_line(posterior ~ p) %>%
+  gf_point() %>% 
+  gf_facet_grid(n_points ~ prior_label, scales = "free") %>%
+  gf_labs(
+    x = "probability of water",
+    y = "posterior probability") %>% 
+  gf_theme(panel.grid = element_blank())  
 ```
 
 ### Quadratic approximation.
@@ -983,30 +1327,51 @@ Now make Figure 2.8.
 n_grid <- 100
 
 # wrangle
-tibble(w = c(6, 12, 24),
-       n = c(9, 18, 36),
-       s = c(.16, .11, .08)) %>% 
-  expand(nesting(w, n, s),
-         p_grid = seq(from = 0, to = 1, length.out = n_grid)) %>% 
-  mutate(prior = 1,
-         m     = .67)  %>%
-  mutate(likelihood = dbinom(w, size = n, prob = p_grid)) %>%
-  mutate(unstd_grid_posterior = likelihood * prior,
-         unstd_quad_posterior = dnorm(p_grid, m, s)) %>%
+Grid <-
+  tibble(
+    w = c(6, 12, 24),
+    n = c(9, 18, 36),
+    s = c(.16, .11, .08)) %>% 
+  expand(
+    nesting(w, n, s),
+    p = seq(from = 0, to = 1, length.out = n_grid)) %>% 
+  mutate(
+    prior = 1,
+    m     = .67,  
+    likelihood = dbinom(w, size = n, prob = p), 
+    unstd_grid_posterior = likelihood * prior,
+    unstd_quad_posterior = dnorm(p, m, s)) %>%
   group_by(w) %>% 
-  mutate(grid_posterior = unstd_grid_posterior / sum(unstd_grid_posterior),
-         quad_posterior = unstd_quad_posterior / sum(unstd_quad_posterior),
-         n              = str_c("n = ", n)) %>% 
-  mutate(n = factor(n, levels = c("n = 9", "n = 18", "n = 36"))) %>% 
-  
-  # plot
-  ggplot(aes(x = p_grid)) +
+  mutate(
+    grid_posterior = unstd_grid_posterior / sum(unstd_grid_posterior),
+    quad_posterior = unstd_quad_posterior / sum(unstd_quad_posterior),
+    n              = reorder(str_c("n = ", n), n))
+
+Grid %>%                 # sanity check; make sure we have the number of rows we expect.
+  group_by(w, n, s) %>% 
+  summarise(rows = n())
+```
+
+```{r include = ! use_ggformula, eval = ! use_ggformula}
+Grid %>% 
+  gf_line(grid_posterior ~ p, color = ~ "grid") %>%
+  gf_line(quad_posterior ~ p, color = ~ "quad") %>%
+  gf_labs(
+    x = "proportion water (p)",
+    y = "density",
+    colour = "method") %>% 
+  gf_facet_wrap(~n, scales = "free") %>%
+  gf_labs(x = "proportion water (p)", y = "density", color = "method") %>% 
+  gf_theme(panel.grid = element_blank(), legend.position = "top") 
+```
+
+```{r include = use_ggformula, eval = use_ggformula}
+Grid %>% 
+  ggplot(aes(x = p)) +
   geom_line(aes(y = grid_posterior)) +
   geom_line(aes(y = quad_posterior),
             color = "grey50") +
-  labs(x = "proportion water",
-       y = "density") +
-  theme(panel.grid = element_blank()) +
+  theme(panel.grid = element_blank(), legend.position = "top") +
   facet_wrap(~n, scales = "free")
 ```
 
@@ -1033,6 +1398,7 @@ If you haven't already installed **brms**, you can find instructions on how to d
 Here we re-fit the last model from above, the one for which $w = 24$ and $n = 36$.
 
 ```{r b2.1}
+library(brms)
 b2.1 <-
   brm(data = list(w = 24), 
       family = binomial(link = "identity"),
@@ -1045,29 +1411,41 @@ b2.1 <-
 The model output from **brms** looks like so.
 
 ```{r}
-print(b2.1)
+b2.1
 ```
 
 There's a lot going on in that output, which we'll start to clarify in [Chapter 4][Geocentric Models]. For now, focus on the 'Intercept' line. As we'll also learn in Chapter 4, the intercept of a regression model with no predictors is the same as its mean. In the special case of a model using the binomial likelihood, the mean is the probability of a 1 in a given trial, $\theta$.
  
-Also, with **brms**, there are many ways to summarize the results of a model. The `brms::posterior_summary()` function is an analogue to `rethinking::precis()`. We will, however, need to use `round()` to reduce the output to a reasonable number of decimal places.
+Also, with **brms**, there are many ways to summarize the results of a model.
+The `brms::posterior_summary()` function is an analogue to
+`rethinking::precis()`. We will, however, want to round to a reasonable number of digits.
+This can be done using `round()`.  
+To tell R how many digits you usually want, try `options(digits = 3)`.
 
 ```{r}
-posterior_summary(b2.1) %>% 
-  round(digits = 2)
+posterior_summary(b2.1)  %>% 
+  round(digits = 3)
 ```
 
 The `b_Intercept` row is the probability. Don't worry about the second line, for now. We'll cover the details of **brms** model fitting in later chapters. To finish up, why not plot the results of our model and compare them with those from `rethinking::quap()`, above?
 
-```{r, fig.width = 3, fig.height = 2.75}
+```{r, fig.width = 3, fig.height = 2.75, include = ! use_ggformula, eval = ! use_ggformula}
 posterior_samples(b2.1) %>% 
   mutate(n = "n = 36") %>%
-  
   ggplot(aes(x = b_Intercept)) +
   geom_density(fill = "black") +
   scale_x_continuous("proportion water", limits = c(0, 1)) +
   theme(panel.grid = element_blank()) +
   facet_wrap(~n)
+```
+
+```{r, fig.width = 3, fig.height = 2.75, include = ! use_ggformula, eval = ! use_ggformula}
+posterior_samples(b2.1) %>% 
+  mutate(n = "n = 36") %>%
+  gf_density( ~ b_Intercept | n) %>%
+  gf_lims(x = c(0, 1)) %>%
+  gf_labs(x = "proportion water (p)") %>%
+  gf_theme(panel.grid = element_blank()) 
 ```
 
 If you're still confused. Cool. This is just a preview. We'll start walking through fitting models with **brms** in [Chapter 4][Geocentric models] and we'll learn a lot about regression with the binomial likelihood in [Chapter 11][God Spiked the Integers].
@@ -1079,7 +1457,7 @@ sessionInfo()
 ```
 
 ```{r, echo = F, warning = F, message = F}
-rm(d, lines_1, lines_2, n_blue, n_white, t, move_over, ways, sequence_length, p1, p2, p3, globe_qa, globe_qa_18, globe_qa_36, n_grid, b2.1)
+rm(d, Lines_1, Lines_2, n_blue, n_white, t, move_over, ways, sequence_length, p1, p2, p3, globe_qa, globe_qa_18, globe_qa_36, n_grid, b2.1)
 ```
 
 ```{r, echo = F, warning = F, message = F, results = "hide"}

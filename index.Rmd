@@ -1,7 +1,7 @@
 --- 
 title: "*Statistical rethinking* with brms, ggplot2, and the tidyverse: Second edition"
 subtitle: "version 0.1.1"
-author: ["A Solomon Kurz"]
+author: ["A Solomon Kurz", "Randall Pruim"]
 date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 output: 
@@ -24,9 +24,34 @@ twitter-handle: SolomonKurz
 description: "This book is an attempt to re-express the code in the second edition of McElreath's textbook, 'Statistical rethinking.' His models are re-fit in brms, plots are redone with ggplot2, and the general data wrangling code predominantly follows the tidyverse style."
 ---
 
+```{r include = FALSE}
+use_ggformula <- TRUE
+```
+
 # What and why {-}
 
-This ebook is based on the second edition of [Richard McElreath](https://twitter.com/rlmcelreath)'s [-@mcelreathStatisticalRethinkingBayesian2020] text, [*Statistical rethinking: A Bayesian course with examples in R and Stan*](https://xcelab.net/rm/statistical-rethinking/). My contributions show how to fit the models he covered with [Paul Bürkner](https://twitter.com/paulbuerkner)'s [**brms** package](https://github.com/paul-buerkner/brms) [@R-brms; @burknerBrmsPackageBayesian2017; @burknerAdvancedBayesianMultilevel2018], which makes it easy to fit Bayesian regression models in **R** [@R-base] using Hamiltonian Monte Carlo. I also prefer plotting and data wrangling with the packages from the [**tidyverse**](http://style.tidyverse.org) [@R-tidyverse; @wickhamWelcomeTidyverse2019]. So we'll be using those methods, too.
+From A Solomon Kurz:
+
+>This ebook is based on the second edition of [Richard McElreath](https://twitter.com/rlmcelreath)'s [-@mcelreathStatisticalRethinkingBayesian2020] text, [*Statistical rethinking: A Bayesian course with examples in R and Stan*](https://xcelab.net/rm/statistical-rethinking/). My contributions show how to fit the models he covered with [Paul Bürkner](https://twitter.com/paulbuerkner)'s [**brms** package](https://github.com/paul-buerkner/brms) [@R-brms; @burknerBrmsPackageBayesian2017; @burknerAdvancedBayesianMultilevel2018], which makes it easy to fit Bayesian regression models in **R** [@R-base] using Hamiltonian Monte Carlo. I also prefer plotting and data wrangling with the packages from the [**tidyverse**](http://style.tidyverse.org) [@R-tidyverse; @wickhamWelcomeTidyverse2019]. So we'll be using those methods, too.
+
+## ggformula {-}
+
+This revision by Randall Pruim is aimed primarily at using 
+[**ggformula**](http://www.mosaic-web.org/ggformula/)
+for graphics.
+The main advantages of **ggformula**:
+
+* a formula-based syntax (similar to what is used by {brms});
+* smoother compatibility with {tidyverse};
+* more consice code.
+
+In principle, anything that can be done with **ggformula** can be done with
+{ggplot2}, so this is a bit of syntactic sugar.  But it is nice sugar.
+
+Additinonal things may be added/modified as well as I go along, including
+
+* Not naming everything `d`.
+* Simplifying code where possible.
 
 ## We have updates {-}
 
@@ -43,6 +68,35 @@ Welcome to version 0.1.1! This is a mini update designed to
 * fix code breaks resulting from updates to the [**broom** package](https://CRAN.R-project.org/package=broom) [@R-broom], caught by [Jenny Bigman](https://twitter.com/jennybigman);
 * replace the soon-to-be retired `sample_n()` code with `slice_sample()`, caught by [Randall Pruim](https://github.com/rpruim);
 * and correct a few typos along the way.
+
+### Version 0.1.2 {-}
+
+This is the first attempt at a **ggformula** conversion and is a work in progress.
+Progress will roughly parallel my Spring 2021 course.
+
+
+
+## License and citation {-}
+
+This book is licensed under the Creative Commons Zero v1.0 Universal license. You can learn the details, [here](https://github.com/ASKurz/Statistical_Rethinking_with_brms_ggplot2_and_the_tidyverse_2_ed/blob/master/LICENSE). In short, you can use my work. Just make sure you give me the appropriate credit the same way you would for any other scholarly resource. Here's the citation information:
+
+```{r, eval = F}
+@book{kurzStatisticalRethinkingSecondEd2020,
+  title = {Statistical {R}ethinking with brms, ggformula, and the tidyverse: {{Second}} edition},
+  author = {Kurz, A. Solomon and Pruim, Randall},
+  year = {2021},
+  month = {feb},
+  edition = {version 0.1.2},
+  url = {https://rpruim.github.io/Statistical_Rethinking_with_brms_2_ed/}
+}
+```
+
+```{r, echo = F, message = F, warning = F, results = "hide"}
+# pacman::p_unload(pacman::p_loaded(), character.only = TRUE)
+```
+
+
+## More from A Solomon Kurz {-}
 
 ### We're not done yet and I could use your help. {-}
 
@@ -75,23 +129,3 @@ I'd like to thank the following for their helpful contributions:
 * Donald R. Williams ([\@donaldRwilliams](https://github.com/donaldRwilliams)). 
 
 Science is better when we work together.
-
-## License and citation {-}
-
-This book is licensed under the Creative Commons Zero v1.0 Universal license. You can learn the details, [here](https://github.com/ASKurz/Statistical_Rethinking_with_brms_ggplot2_and_the_tidyverse_2_ed/blob/master/LICENSE). In short, you can use my work. Just make sure you give me the appropriate credit the same way you would for any other scholarly resource. Here's the citation information:
-
-```{r, eval = F}
-@book{kurzStatisticalRethinkingSecondEd2020,
-  title = {Statistical rethinking with brms, ggplot2, and the tidyverse: {{Second}} edition},
-  author = {Kurz, A. Solomon},
-  year = {2020},
-  month = {dec},
-  edition = {version 0.1.1},
-  url = {https://bookdown.org/content/4857/}
-}
-```
-
-```{r, echo = F, message = F, warning = F, results = "hide"}
-# pacman::p_unload(pacman::p_loaded(), character.only = TRUE)
-```
-
