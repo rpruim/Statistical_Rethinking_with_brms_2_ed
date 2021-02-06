@@ -1412,38 +1412,39 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="small-worlds-and-large-worlds.html#cb50-1"></a>sequence_length &lt;-<span class="st"> </span><span class="dv">50</span></span>
 <span id="cb50-2"><a href="small-worlds-and-large-worlds.html#cb50-2"></a></span>
 <span id="cb50-3"><a href="small-worlds-and-large-worlds.html#cb50-3"></a>Globe <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb50-4"><a href="small-worlds-and-large-worlds.html#cb50-4"></a><span class="st">  </span><span class="kw">expand</span>(<span class="kw">nesting</span>(n_trials, toss, n_success), </span>
-<span id="cb50-5"><a href="small-worlds-and-large-worlds.html#cb50-5"></a>         <span class="dt">p_water =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> sequence_length)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb50-6"><a href="small-worlds-and-large-worlds.html#cb50-6"></a><span class="st">  </span><span class="kw">group_by</span>(p_water) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb50-7"><a href="small-worlds-and-large-worlds.html#cb50-7"></a><span class="st"> </span><span class="co"># you can learn more about lagging at one of these places:</span></span>
-<span id="cb50-8"><a href="small-worlds-and-large-worlds.html#cb50-8"></a><span class="st"> </span><span class="co"># * https://www.rdocumentation.org/packages/stats/versions/3.5.1/topics/lag </span></span>
-<span id="cb50-9"><a href="small-worlds-and-large-worlds.html#cb50-9"></a><span class="st"> </span><span class="co"># * https://dplyr.tidyverse.org/reference/lead-lag.html</span></span>
-<span id="cb50-10"><a href="small-worlds-and-large-worlds.html#cb50-10"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lagged_n_trials  =</span> <span class="kw">lag</span>(n_trials, <span class="dt">k =</span> <span class="dv">1</span>),</span>
-<span id="cb50-11"><a href="small-worlds-and-large-worlds.html#cb50-11"></a>         <span class="dt">lagged_n_success =</span> <span class="kw">lag</span>(n_success, <span class="dt">k =</span> <span class="dv">1</span>)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb50-12"><a href="small-worlds-and-large-worlds.html#cb50-12"></a><span class="st">  </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb50-13"><a href="small-worlds-and-large-worlds.html#cb50-13"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">prior      =</span> <span class="kw">ifelse</span>(n_trials <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="fl">.5</span>,</span>
-<span id="cb50-14"><a href="small-worlds-and-large-worlds.html#cb50-14"></a>                             <span class="kw">dbinom</span>(<span class="dt">x    =</span> lagged_n_success, </span>
-<span id="cb50-15"><a href="small-worlds-and-large-worlds.html#cb50-15"></a>                                    <span class="dt">size =</span> lagged_n_trials, </span>
-<span id="cb50-16"><a href="small-worlds-and-large-worlds.html#cb50-16"></a>                                    <span class="dt">prob =</span> p_water)),</span>
-<span id="cb50-17"><a href="small-worlds-and-large-worlds.html#cb50-17"></a>         <span class="dt">likelihood =</span> <span class="kw">dbinom</span>(<span class="dt">x    =</span> n_success, </span>
-<span id="cb50-18"><a href="small-worlds-and-large-worlds.html#cb50-18"></a>                             <span class="dt">size =</span> n_trials, </span>
-<span id="cb50-19"><a href="small-worlds-and-large-worlds.html#cb50-19"></a>                             <span class="dt">prob =</span> p_water),</span>
-<span id="cb50-20"><a href="small-worlds-and-large-worlds.html#cb50-20"></a>         <span class="dt">strip      =</span> <span class="kw">str_c</span>(<span class="st">&quot;n = &quot;</span>, n_trials)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb50-21"><a href="small-worlds-and-large-worlds.html#cb50-21"></a><span class="st">  </span><span class="co"># the next three lines allow us to normalize the prior and the likelihood, </span></span>
-<span id="cb50-22"><a href="small-worlds-and-large-worlds.html#cb50-22"></a><span class="st">  </span><span class="co"># putting them both in a probability metric </span></span>
-<span id="cb50-23"><a href="small-worlds-and-large-worlds.html#cb50-23"></a><span class="st">  </span><span class="kw">group_by</span>(n_trials) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb50-24"><a href="small-worlds-and-large-worlds.html#cb50-24"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">prior      =</span> prior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(prior),</span>
-<span id="cb50-25"><a href="small-worlds-and-large-worlds.html#cb50-25"></a>         <span class="dt">likelihood =</span> likelihood <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(likelihood)) <span class="op">%&gt;%</span><span class="st">   </span></span>
-<span id="cb50-26"><a href="small-worlds-and-large-worlds.html#cb50-26"></a><span class="st">  </span></span>
-<span id="cb50-27"><a href="small-worlds-and-large-worlds.html#cb50-27"></a><span class="st">  </span><span class="co"># plot!</span></span>
-<span id="cb50-28"><a href="small-worlds-and-large-worlds.html#cb50-28"></a><span class="st">  </span><span class="kw">gf_line</span>(prior <span class="op">~</span><span class="st"> </span>p_water, <span class="dt">linetype =</span> <span class="dv">2</span>) <span class="op">%&gt;%</span></span>
-<span id="cb50-29"><a href="small-worlds-and-large-worlds.html#cb50-29"></a><span class="st">  </span><span class="kw">gf_line</span>(likelihood <span class="op">~</span><span class="st"> </span>p_water) <span class="op">%&gt;%</span></span>
-<span id="cb50-30"><a href="small-worlds-and-large-worlds.html#cb50-30"></a><span class="st">  </span><span class="kw">gf_facet_wrap</span>( <span class="op">~</span><span class="st"> </span>strip, <span class="dt">scales =</span> <span class="st">&quot;free_y&quot;</span>) <span class="op">%&gt;%</span></span>
-<span id="cb50-31"><a href="small-worlds-and-large-worlds.html#cb50-31"></a><span class="st">  </span><span class="kw">gf_refine</span>(</span>
-<span id="cb50-32"><a href="small-worlds-and-large-worlds.html#cb50-32"></a>    <span class="kw">scale_x_continuous</span>(<span class="st">&quot;proportion water&quot;</span>, <span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">.5</span>, <span class="dv">1</span>)),</span>
-<span id="cb50-33"><a href="small-worlds-and-large-worlds.html#cb50-33"></a>    <span class="kw">scale_y_continuous</span>(<span class="st">&quot;plausibility&quot;</span>, <span class="dt">breaks =</span> <span class="ot">NULL</span>) </span>
-<span id="cb50-34"><a href="small-worlds-and-large-worlds.html#cb50-34"></a>  ) <span class="op">%&gt;%</span></span>
-<span id="cb50-35"><a href="small-worlds-and-large-worlds.html#cb50-35"></a><span class="st">  </span><span class="kw">gf_theme</span>(<span class="kw">theme_void</span>())</span></code></pre></div>
+<span id="cb50-4"><a href="small-worlds-and-large-worlds.html#cb50-4"></a><span class="st">  </span><span class="kw">expand</span>(</span>
+<span id="cb50-5"><a href="small-worlds-and-large-worlds.html#cb50-5"></a>    <span class="kw">nesting</span>(n_trials, toss, n_success), </span>
+<span id="cb50-6"><a href="small-worlds-and-large-worlds.html#cb50-6"></a>    <span class="dt">p_water =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> sequence_length)) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb50-7"><a href="small-worlds-and-large-worlds.html#cb50-7"></a><span class="st">  </span><span class="kw">group_by</span>(p_water) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb50-8"><a href="small-worlds-and-large-worlds.html#cb50-8"></a><span class="st"> </span><span class="co"># you can learn more about lagging at one of these places:</span></span>
+<span id="cb50-9"><a href="small-worlds-and-large-worlds.html#cb50-9"></a><span class="st"> </span><span class="co"># * https://www.rdocumentation.org/packages/stats/versions/3.5.1/topics/lag </span></span>
+<span id="cb50-10"><a href="small-worlds-and-large-worlds.html#cb50-10"></a><span class="st"> </span><span class="co"># * https://dplyr.tidyverse.org/reference/lead-lag.html</span></span>
+<span id="cb50-11"><a href="small-worlds-and-large-worlds.html#cb50-11"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">lagged_n_trials  =</span> <span class="kw">lag</span>(n_trials, <span class="dt">k =</span> <span class="dv">1</span>),</span>
+<span id="cb50-12"><a href="small-worlds-and-large-worlds.html#cb50-12"></a>         <span class="dt">lagged_n_success =</span> <span class="kw">lag</span>(n_success, <span class="dt">k =</span> <span class="dv">1</span>)) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb50-13"><a href="small-worlds-and-large-worlds.html#cb50-13"></a><span class="st">  </span><span class="kw">ungroup</span>() <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb50-14"><a href="small-worlds-and-large-worlds.html#cb50-14"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">prior      =</span> <span class="kw">ifelse</span>(n_trials <span class="op">==</span><span class="st"> </span><span class="dv">1</span>, <span class="fl">.5</span>,</span>
+<span id="cb50-15"><a href="small-worlds-and-large-worlds.html#cb50-15"></a>                             <span class="kw">dbinom</span>(<span class="dt">x    =</span> lagged_n_success, </span>
+<span id="cb50-16"><a href="small-worlds-and-large-worlds.html#cb50-16"></a>                                    <span class="dt">size =</span> lagged_n_trials, </span>
+<span id="cb50-17"><a href="small-worlds-and-large-worlds.html#cb50-17"></a>                                    <span class="dt">prob =</span> p_water)),</span>
+<span id="cb50-18"><a href="small-worlds-and-large-worlds.html#cb50-18"></a>         <span class="dt">likelihood =</span> <span class="kw">dbinom</span>(<span class="dt">x    =</span> n_success, </span>
+<span id="cb50-19"><a href="small-worlds-and-large-worlds.html#cb50-19"></a>                             <span class="dt">size =</span> n_trials, </span>
+<span id="cb50-20"><a href="small-worlds-and-large-worlds.html#cb50-20"></a>                             <span class="dt">prob =</span> p_water),</span>
+<span id="cb50-21"><a href="small-worlds-and-large-worlds.html#cb50-21"></a>         <span class="dt">strip      =</span> <span class="kw">str_c</span>(<span class="st">&quot;n = &quot;</span>, n_trials)) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb50-22"><a href="small-worlds-and-large-worlds.html#cb50-22"></a><span class="st">  </span><span class="co"># the next three lines allow us to normalize the prior and the likelihood, </span></span>
+<span id="cb50-23"><a href="small-worlds-and-large-worlds.html#cb50-23"></a><span class="st">  </span><span class="co"># putting them both in a probability metric </span></span>
+<span id="cb50-24"><a href="small-worlds-and-large-worlds.html#cb50-24"></a><span class="st">  </span><span class="kw">group_by</span>(n_trials) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb50-25"><a href="small-worlds-and-large-worlds.html#cb50-25"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">prior      =</span> prior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(prior),</span>
+<span id="cb50-26"><a href="small-worlds-and-large-worlds.html#cb50-26"></a>         <span class="dt">likelihood =</span> likelihood <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(likelihood)) <span class="op">%&gt;%</span><span class="st">   </span></span>
+<span id="cb50-27"><a href="small-worlds-and-large-worlds.html#cb50-27"></a><span class="st">  </span></span>
+<span id="cb50-28"><a href="small-worlds-and-large-worlds.html#cb50-28"></a><span class="st">  </span><span class="co"># plot!</span></span>
+<span id="cb50-29"><a href="small-worlds-and-large-worlds.html#cb50-29"></a><span class="st">  </span><span class="kw">gf_line</span>(prior <span class="op">~</span><span class="st"> </span>p_water, <span class="dt">linetype =</span> <span class="dv">2</span>) <span class="op">%&gt;%</span></span>
+<span id="cb50-30"><a href="small-worlds-and-large-worlds.html#cb50-30"></a><span class="st">  </span><span class="kw">gf_line</span>(likelihood <span class="op">~</span><span class="st"> </span>p_water) <span class="op">%&gt;%</span></span>
+<span id="cb50-31"><a href="small-worlds-and-large-worlds.html#cb50-31"></a><span class="st">  </span><span class="kw">gf_facet_wrap</span>( <span class="op">~</span><span class="st"> </span>strip, <span class="dt">scales =</span> <span class="st">&quot;free_y&quot;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb50-32"><a href="small-worlds-and-large-worlds.html#cb50-32"></a><span class="st">  </span><span class="kw">gf_refine</span>(</span>
+<span id="cb50-33"><a href="small-worlds-and-large-worlds.html#cb50-33"></a>    <span class="kw">scale_x_continuous</span>(<span class="st">&quot;proportion water&quot;</span>, <span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="fl">.5</span>, <span class="dv">1</span>)),</span>
+<span id="cb50-34"><a href="small-worlds-and-large-worlds.html#cb50-34"></a>    <span class="kw">scale_y_continuous</span>(<span class="st">&quot;plausibility&quot;</span>, <span class="dt">breaks =</span> <span class="ot">NULL</span>) </span>
+<span id="cb50-35"><a href="small-worlds-and-large-worlds.html#cb50-35"></a>  ) <span class="op">%&gt;%</span></span>
+<span id="cb50-36"><a href="small-worlds-and-large-worlds.html#cb50-36"></a><span class="st">  </span><span class="kw">gf_theme</span>(<span class="kw">theme_void</span>())</span></code></pre></div>
 <p><img src="_main_files/figure-html/unnamed-chunk-35-1.png" width="576" style="display: block; margin: auto;" /></p>
 <p>If it wasn’t clear in the code, the dashed curves are normalized prior densities. The solid ones are normalized likelihoods. If you don’t normalize (i.e., divide the density by the sum of the density), their respective heights don’t match up with those in the text. Furthermore, it’s the normalization that makes them directly comparable.</p>
 <p>To learn more about <code>dplyr::group_by()</code> and its opposite <code>dplyr::ungroup()</code>, check out <a href="http://r4ds.had.co.nz/transform.html"><em>R4DS</em>, Chapter 5</a>. To learn about <code>tidyr::expand()</code>, go <a href="https://tidyr.tidyverse.org/reference/expand.html">here</a>.</p>
@@ -1537,24 +1538,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 4     0   3   0.333
 ## 5     0   9   0.111</code></pre>
 <p>I like to verify things with plots.</p>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="small-worlds-and-large-worlds.html#cb56-1"></a><span class="kw">tibble</span>(<span class="dt">a =</span> <span class="dv">0</span>,</span>
-<span id="cb56-2"><a href="small-worlds-and-large-worlds.html#cb56-2"></a>       <span class="dt">b =</span> <span class="kw">c</span>(<span class="dv">1</span>, <span class="fl">1.5</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">9</span>)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb56-3"><a href="small-worlds-and-large-worlds.html#cb56-3"></a><span class="st">  </span><span class="kw">expand</span>(<span class="kw">nesting</span>(a, b), <span class="dt">parameter_space =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">9</span>, <span class="dt">length.out =</span> <span class="dv">500</span>)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb56-4"><a href="small-worlds-and-large-worlds.html#cb56-4"></a><span class="st">  </span><span class="kw">mutate</span>(<span class="dt">prob =</span> <span class="kw">dunif</span>(parameter_space, a, b),</span>
-<span id="cb56-5"><a href="small-worlds-and-large-worlds.html#cb56-5"></a>         <span class="dt">b    =</span> <span class="kw">str_c</span>(<span class="st">&quot;b = &quot;</span>, b)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb56-6"><a href="small-worlds-and-large-worlds.html#cb56-6"></a><span class="st">  </span><span class="kw">gf_ribbon</span>(<span class="dv">0</span> <span class="op">+</span><span class="st"> </span>prob <span class="op">~</span><span class="st"> </span>parameter_space) <span class="op">%&gt;%</span></span>
-<span id="cb56-7"><a href="small-worlds-and-large-worlds.html#cb56-7"></a><span class="st">  </span><span class="kw">gf_facet_wrap</span>( <span class="op">~</span><span class="st"> </span>b, <span class="dt">ncol =</span> <span class="dv">5</span>) <span class="op">%&gt;%</span></span>
-<span id="cb56-8"><a href="small-worlds-and-large-worlds.html#cb56-8"></a><span class="st">  </span><span class="kw">gf_refine</span>(</span>
-<span id="cb56-9"><a href="small-worlds-and-large-worlds.html#cb56-9"></a>    <span class="kw">scale_x_continuous</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">3</span>, <span class="dv">9</span>)),</span>
-<span id="cb56-10"><a href="small-worlds-and-large-worlds.html#cb56-10"></a>    <span class="kw">scale_y_continuous</span>(<span class="dt">breaks =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">1</span><span class="op">/</span><span class="dv">9</span>, <span class="dv">1</span><span class="op">/</span><span class="dv">3</span>, <span class="dv">1</span><span class="op">/</span><span class="dv">2</span>, <span class="dv">2</span><span class="op">/</span><span class="dv">3</span>, <span class="dv">1</span>),</span>
-<span id="cb56-11"><a href="small-worlds-and-large-worlds.html#cb56-11"></a>                         <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;0&quot;</span>, <span class="st">&quot;1/9&quot;</span>, <span class="st">&quot;1/3&quot;</span>, <span class="st">&quot;1/2&quot;</span>, <span class="st">&quot;2/3&quot;</span>, <span class="st">&quot;1&quot;</span>))</span>
-<span id="cb56-12"><a href="small-worlds-and-large-worlds.html#cb56-12"></a>  ) <span class="op">%&gt;%</span></span>
-<span id="cb56-13"><a href="small-worlds-and-large-worlds.html#cb56-13"></a><span class="st">  </span><span class="kw">gf_theme</span>(</span>
-<span id="cb56-14"><a href="small-worlds-and-large-worlds.html#cb56-14"></a>    <span class="dt">panel.grid.minor =</span> <span class="kw">element_blank</span>(),</span>
-<span id="cb56-15"><a href="small-worlds-and-large-worlds.html#cb56-15"></a>    <span class="dt">panel.grid.major.x =</span> <span class="kw">element_blank</span>()) </span></code></pre></div>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="small-worlds-and-large-worlds.html#cb56-1"></a><span class="kw">gf_dist</span>(<span class="st">&quot;unif&quot;</span>, <span class="dt">min =</span> <span class="dv">0</span>, <span class="dt">max =</span> <span class="dv">9</span>, <span class="dt">fill =</span> <span class="op">~</span><span class="st">&quot;Unif(0, 9)&quot;</span>, <span class="dt">geom =</span> <span class="st">&quot;area&quot;</span>, <span class="dt">alpha =</span> <span class="fl">0.3</span>) <span class="op">%&gt;%</span></span>
+<span id="cb56-2"><a href="small-worlds-and-large-worlds.html#cb56-2"></a><span class="st">  </span><span class="kw">gf_dist</span>(<span class="st">&quot;unif&quot;</span>, <span class="dt">mina =</span> <span class="dv">0</span>, <span class="dt">max =</span> <span class="dv">3</span>, <span class="dt">fill =</span> <span class="op">~</span><span class="st">&quot;Unif(0, 3)&quot;</span>, <span class="dt">geom =</span> <span class="st">&quot;area&quot;</span>, <span class="dt">alpha =</span> <span class="fl">0.3</span>) <span class="op">%&gt;%</span></span>
+<span id="cb56-3"><a href="small-worlds-and-large-worlds.html#cb56-3"></a><span class="st">  </span><span class="kw">gf_dist</span>(<span class="st">&quot;unif&quot;</span>, <span class="dt">mina =</span> <span class="dv">0</span>, <span class="dt">max =</span> <span class="dv">2</span>, <span class="dt">fill =</span> <span class="op">~</span><span class="st">&quot;Unif(0, 2)&quot;</span>, <span class="dt">geom =</span> <span class="st">&quot;area&quot;</span>, <span class="dt">alpha =</span> <span class="fl">0.3</span>) <span class="op">%&gt;%</span></span>
+<span id="cb56-4"><a href="small-worlds-and-large-worlds.html#cb56-4"></a><span class="st">  </span><span class="kw">gf_dist</span>(<span class="st">&quot;unif&quot;</span>, <span class="dt">mina =</span> <span class="dv">0</span>, <span class="dt">max =</span> <span class="dv">1</span>, <span class="dt">fill =</span> <span class="op">~</span><span class="st">&quot;Unif(0, 1)&quot;</span>, <span class="dt">geom =</span> <span class="st">&quot;area&quot;</span>, <span class="dt">alpha =</span> <span class="fl">0.3</span>) <span class="op">%&gt;%</span></span>
+<span id="cb56-5"><a href="small-worlds-and-large-worlds.html#cb56-5"></a><span class="st">  </span><span class="kw">gf_theme</span>(<span class="dt">legend.position =</span> <span class="st">&quot;top&quot;</span>)</span></code></pre></div>
 <p><img src="_main_files/figure-html/unnamed-chunk-41-1.png" width="768" style="display: block; margin: auto;" /></p>
 <p>As we’ll learn much later in the project, the <span class="math inline">\(\operatorname{Unif}(0, 1)\)</span> distribution is special in that we can also express it as the beta distribution for which <span class="math inline">\(\alpha = 1 \text{ and } \beta = 1\)</span>. E.g.,</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="small-worlds-and-large-worlds.html#cb57-1"></a><span class="kw">gf_dist</span>(<span class="st">&quot;beta&quot;</span>, <span class="dt">shape1 =</span> <span class="dv">1</span>, <span class="dt">shape2 =</span> <span class="dv">1</span>, <span class="dt">geom =</span> <span class="st">&quot;area&quot;</span>) <span class="op">%&gt;%</span></span>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="small-worlds-and-large-worlds.html#cb57-1"></a><span class="kw">gf_dist</span>(<span class="st">&quot;beta&quot;</span>, <span class="dt">shape1 =</span> <span class="dv">1</span>, <span class="dt">shape2 =</span> <span class="dv">1</span>, <span class="dt">geom =</span> <span class="st">&quot;area&quot;</span>, <span class="dt">alpha =</span> <span class="fl">0.5</span>) <span class="op">%&gt;%</span></span>
 <span id="cb57-2"><a href="small-worlds-and-large-worlds.html#cb57-2"></a><span class="st">  </span><span class="kw">gf_labs</span>(<span class="dt">title =</span> <span class="kw">expression</span>(<span class="st">&quot;This is beta&quot;</span><span class="op">*</span>(<span class="dv">1</span><span class="op">*</span><span class="st">&quot;, &quot;</span><span class="op">*</span><span class="dv">1</span>))) <span class="op">%&gt;%</span></span>
 <span id="cb57-3"><a href="small-worlds-and-large-worlds.html#cb57-3"></a><span class="st">  </span><span class="kw">gf_lims</span>(<span class="dt">y =</span> <span class="kw">c</span>(<span class="dv">0</span>, <span class="dv">2</span>)) <span class="op">%&gt;%</span></span>
 <span id="cb57-4"><a href="small-worlds-and-large-worlds.html#cb57-4"></a><span class="st">  </span><span class="kw">gf_theme</span>(<span class="dt">panel.grid =</span> <span class="kw">element_blank</span>())</span></code></pre></div>
@@ -1646,14 +1637,32 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <blockquote>
 <p>at any particular value of a parameter, <span class="math inline">\(p&#39;\)</span> , it’s a simple matter to compute the posterior probability: just multiply the prior probability of <span class="math inline">\(p&#39;\)</span> by the likelihood at <span class="math inline">\(p&#39;\)</span>. Repeating this procedure for each value in the grid generates an approximate picture of the exact posterior distribution. This procedure is called <strong>grid approximation</strong>. (pp. 39–40, <strong>emphasis</strong> in the original)</p>
 </blockquote>
-<p>We just employed grid approximation over the last figure. To get nice smooth lines, we computed the posterior over 1,000 evenly-spaced points on the probability space. Here we’ll prepare for Figure 2.7 with 20.</p>
-<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="small-worlds-and-large-worlds.html#cb60-1"></a>Grid1 &lt;-</span>
-<span id="cb60-2"><a href="small-worlds-and-large-worlds.html#cb60-2"></a><span class="st">    </span><span class="kw">expand_grid</span>(<span class="dt">p =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> <span class="dv">20</span>),      <span class="co"># define grid</span></span>
-<span id="cb60-3"><a href="small-worlds-and-large-worlds.html#cb60-3"></a>           <span class="dt">prior  =</span> <span class="dv">1</span>) <span class="op">%&gt;%</span><span class="st">                                       </span><span class="co"># define prior</span></span>
-<span id="cb60-4"><a href="small-worlds-and-large-worlds.html#cb60-4"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">likelihood =</span> <span class="kw">dbinom</span>(<span class="dv">6</span>, <span class="dt">size =</span> <span class="dv">9</span>, <span class="dt">prob =</span> p)) <span class="op">%&gt;%</span><span class="st">       </span><span class="co"># compute likelihood at each value in grid</span></span>
-<span id="cb60-5"><a href="small-worlds-and-large-worlds.html#cb60-5"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">unstd_posterior =</span> likelihood <span class="op">*</span><span class="st"> </span>prior) <span class="op">%&gt;%</span><span class="st">             </span><span class="co"># compute product of likelihood and prior</span></span>
-<span id="cb60-6"><a href="small-worlds-and-large-worlds.html#cb60-6"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">posterior =</span> unstd_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_posterior))   <span class="co"># standardize the posterior, so it sums to 1</span></span>
-<span id="cb60-7"><a href="small-worlds-and-large-worlds.html#cb60-7"></a>Grid1</span></code></pre></div>
+<p>We just employed grid approximation over the last figure. To get nice smooth
+lines, we computed the posterior over 1,000 evenly-spaced points on the
+probability space. Here we’ll prepare for Figure 2.7 with 20 equally-spaced points.</p>
+<p>We do this using two important functions:</p>
+<ul>
+<li><p><code>expand_grid()</code> creates a data frame with every combination of the vectors it is provided.</p>
+<p>In the example below, since we only have one parameter, we could have used <code>tibble()</code> instead.
+But for models with multiple parameters, we will want to use <code>expand_grid()</code> so that we
+get every <em>combination</em>.</p></li>
+<li><p><code>mutatate()</code> adds new columns to a data frame – often computed using values in existing columns.</p></li>
+</ul>
+<p>It’s a good idea to do a little <strong>sanity checking</strong> after building a data frame like this. In a simple
+case, just inspecting a few rows may suffice. In more complicated examples, we may want to compute
+some numerical or graphical summaries. Sanity checking doesn’t guarantee that everything is correct
+but tries to make sure things are not horribly and obviously wrong.</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="small-worlds-and-large-worlds.html#cb60-1"></a>Grid20 &lt;-</span>
+<span id="cb60-2"><a href="small-worlds-and-large-worlds.html#cb60-2"></a><span class="st">  </span><span class="kw">expand_grid</span>(</span>
+<span id="cb60-3"><a href="small-worlds-and-large-worlds.html#cb60-3"></a>    <span class="dt">p =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> <span class="dv">20</span>)            <span class="co"># define grid</span></span>
+<span id="cb60-4"><a href="small-worlds-and-large-worlds.html#cb60-4"></a>  ) <span class="op">%&gt;%</span></span>
+<span id="cb60-5"><a href="small-worlds-and-large-worlds.html#cb60-5"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb60-6"><a href="small-worlds-and-large-worlds.html#cb60-6"></a>    <span class="dt">prior  =</span> <span class="dv">1</span>,                                           <span class="co"># define prior</span></span>
+<span id="cb60-7"><a href="small-worlds-and-large-worlds.html#cb60-7"></a>    <span class="dt">likelihood =</span> <span class="kw">dbinom</span>(<span class="dv">6</span>, <span class="dt">size =</span> <span class="dv">9</span>, <span class="dt">prob =</span> p),           <span class="co"># compute likelihood at each value in grid</span></span>
+<span id="cb60-8"><a href="small-worlds-and-large-worlds.html#cb60-8"></a>    <span class="dt">unstd_posterior =</span> likelihood <span class="op">*</span><span class="st"> </span>prior,                 <span class="co"># compute product of likelihood and prior</span></span>
+<span id="cb60-9"><a href="small-worlds-and-large-worlds.html#cb60-9"></a>    <span class="dt">posterior =</span> unstd_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_posterior)    <span class="co"># standardize the posterior, so it sums to 1</span></span>
+<span id="cb60-10"><a href="small-worlds-and-large-worlds.html#cb60-10"></a>  )</span>
+<span id="cb60-11"><a href="small-worlds-and-large-worlds.html#cb60-11"></a>Grid20</span></code></pre></div>
 <pre><code>## # A tibble: 20 x 5
 ##         p prior likelihood unstd_posterior   posterior
 ##     &lt;dbl&gt; &lt;dbl&gt;      &lt;dbl&gt;           &lt;dbl&gt;       &lt;dbl&gt;
@@ -1679,7 +1688,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 20 1          1 0               0          0</code></pre>
 <p>Here’s the code for the right panel of Figure 2.7.</p>
 <div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="small-worlds-and-large-worlds.html#cb62-1"></a>p1 &lt;-</span>
-<span id="cb62-2"><a href="small-worlds-and-large-worlds.html#cb62-2"></a><span class="st">  </span>Grid1 <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb62-2"><a href="small-worlds-and-large-worlds.html#cb62-2"></a><span class="st">  </span>Grid20 <span class="op">%&gt;%</span><span class="st"> </span></span>
 <span id="cb62-3"><a href="small-worlds-and-large-worlds.html#cb62-3"></a><span class="st">  </span><span class="kw">gf_line</span>(posterior <span class="op">~</span><span class="st"> </span>p) <span class="op">%&gt;%</span></span>
 <span id="cb62-4"><a href="small-worlds-and-large-worlds.html#cb62-4"></a><span class="st">  </span><span class="kw">gf_point</span>() <span class="op">%&gt;%</span></span>
 <span id="cb62-5"><a href="small-worlds-and-large-worlds.html#cb62-5"></a><span class="st">  </span><span class="kw">gf_labs</span>(<span class="dt">subtitle =</span> <span class="st">&quot;20 points&quot;</span>,</span>
@@ -1687,14 +1696,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb62-7"><a href="small-worlds-and-large-worlds.html#cb62-7"></a>       <span class="dt">y =</span> <span class="st">&quot;posterior probability&quot;</span>) <span class="op">%&gt;%</span></span>
 <span id="cb62-8"><a href="small-worlds-and-large-worlds.html#cb62-8"></a><span class="st">  </span><span class="kw">gf_theme</span>(<span class="dt">panel.grid =</span> <span class="kw">element_blank</span>())</span></code></pre></div>
 <p>Now here’s the code for the left hand panel of Figure 2.7.</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="small-worlds-and-large-worlds.html#cb63-1"></a>Grid2 &lt;-</span>
-<span id="cb63-2"><a href="small-worlds-and-large-worlds.html#cb63-2"></a><span class="st">    </span><span class="kw">expand_grid</span>(<span class="dt">p =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> <span class="dv">5</span>),       <span class="co"># define grid</span></span>
-<span id="cb63-3"><a href="small-worlds-and-large-worlds.html#cb63-3"></a>           <span class="dt">prior  =</span> <span class="dv">1</span>) <span class="op">%&gt;%</span><span class="st">                                       </span><span class="co"># define prior</span></span>
-<span id="cb63-4"><a href="small-worlds-and-large-worlds.html#cb63-4"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">likelihood =</span> <span class="kw">dbinom</span>(<span class="dv">6</span>, <span class="dt">size =</span> <span class="dv">9</span>, <span class="dt">prob =</span> p)) <span class="op">%&gt;%</span><span class="st">       </span><span class="co"># compute likelihood at each value in grid</span></span>
-<span id="cb63-5"><a href="small-worlds-and-large-worlds.html#cb63-5"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">unstd_posterior =</span> likelihood <span class="op">*</span><span class="st"> </span>prior) <span class="op">%&gt;%</span><span class="st">             </span><span class="co"># compute product of likelihood and prior</span></span>
-<span id="cb63-6"><a href="small-worlds-and-large-worlds.html#cb63-6"></a><span class="st">    </span><span class="kw">mutate</span>(<span class="dt">posterior =</span> unstd_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_posterior))   <span class="co"># standardize the posterior, so it sums to 1</span></span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="small-worlds-and-large-worlds.html#cb63-1"></a>Grid5 &lt;-</span>
+<span id="cb63-2"><a href="small-worlds-and-large-worlds.html#cb63-2"></a><span class="st">  </span><span class="kw">expand_grid</span>(</span>
+<span id="cb63-3"><a href="small-worlds-and-large-worlds.html#cb63-3"></a>    <span class="dt">p =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> <span class="dv">5</span>)            <span class="co"># 1-parameter grid</span></span>
+<span id="cb63-4"><a href="small-worlds-and-large-worlds.html#cb63-4"></a>  ) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb63-5"><a href="small-worlds-and-large-worlds.html#cb63-5"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb63-6"><a href="small-worlds-and-large-worlds.html#cb63-6"></a>    <span class="dt">prior  =</span> <span class="dv">1</span>,                                          <span class="co"># define prior</span></span>
+<span id="cb63-7"><a href="small-worlds-and-large-worlds.html#cb63-7"></a>    <span class="dt">likelihood =</span> <span class="kw">dbinom</span>(<span class="dv">6</span>, <span class="dt">size =</span> <span class="dv">9</span>, <span class="dt">prob =</span> p),          <span class="co"># compute likelihood at each value in grid</span></span>
+<span id="cb63-8"><a href="small-worlds-and-large-worlds.html#cb63-8"></a>    <span class="dt">unstd_posterior =</span> likelihood <span class="op">*</span><span class="st"> </span>prior,                <span class="co"># compute product of likelihood and prior</span></span>
+<span id="cb63-9"><a href="small-worlds-and-large-worlds.html#cb63-9"></a>    <span class="dt">posterior =</span> unstd_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_posterior)   <span class="co"># standardize the posterior, so it sums to 1</span></span>
+<span id="cb63-10"><a href="small-worlds-and-large-worlds.html#cb63-10"></a>  )</span></code></pre></div>
 <div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="small-worlds-and-large-worlds.html#cb64-1"></a>p2 &lt;-</span>
-<span id="cb64-2"><a href="small-worlds-and-large-worlds.html#cb64-2"></a><span class="st">  </span>Grid2 <span class="op">%&gt;%</span></span>
+<span id="cb64-2"><a href="small-worlds-and-large-worlds.html#cb64-2"></a><span class="st">  </span>Grid5 <span class="op">%&gt;%</span></span>
 <span id="cb64-3"><a href="small-worlds-and-large-worlds.html#cb64-3"></a><span class="st">  </span><span class="kw">gf_line</span>(posterior <span class="op">~</span><span class="st"> </span>p) <span class="op">%&gt;%</span></span>
 <span id="cb64-4"><a href="small-worlds-and-large-worlds.html#cb64-4"></a><span class="st">  </span><span class="kw">gf_point</span>() <span class="op">%&gt;%</span></span>
 <span id="cb64-5"><a href="small-worlds-and-large-worlds.html#cb64-5"></a><span class="st">  </span><span class="kw">gf_labs</span>(<span class="dt">subtitle =</span> <span class="st">&quot;5 points&quot;</span>,</span>
@@ -1710,7 +1723,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>That first prior can also be coded as</p>
 <div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="small-worlds-and-large-worlds.html#cb67-1"></a>prior &lt;-<span class="st"> </span>(p <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.5</span>) <span class="op">*</span><span class="st"> </span><span class="dv">1</span></span></code></pre></div>
 <p>The logical is turned into 0 or 1 when multiplied by 1.</p>
-<p>Here’s a condensed way to make the four plots all at once.</p>
+<p>Here’s a condensed way to make the four plots all at once. Things to notice:</p>
+<ul>
+<li>We have added a label for the prior to <code>expand_grid()</code> so after that step we have 4 rows in our data.</li>
+<li>The first <code>mutate()</code> adds a new column. This column contains a list of either 5 or 20 points.</li>
+<li><code>unnest()</code> fulls apart those lists make 5 or 20 rows.</li>
+<li>At this point we are ready to proced with our usual <code>mutate()</code> step to add prior, likelihood, and
+posterior.</li>
+</ul>
 <div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="small-worlds-and-large-worlds.html#cb68-1"></a><span class="co"># make the data</span></span>
 <span id="cb68-2"><a href="small-worlds-and-large-worlds.html#cb68-2"></a>Grids &lt;-</span>
 <span id="cb68-3"><a href="small-worlds-and-large-worlds.html#cb68-3"></a><span class="st">  </span><span class="kw">expand_grid</span>(</span>
@@ -1755,7 +1775,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Under quite general conditions, the region near the peak of the posterior distribution will be nearly Gaussian–or “normal”–in shape. This means the posterior distribution can be usefully approximated by a Gaussian distribution. A Gaussian distribution is convenient, because it can be completely described by only two numbers: the location of its center (mean) and its spread (variance).</p>
 <p>A Gaussian approximation is called “<em>quadratic approximation</em>” because the logarithm of a Gaussian distribution forms a parabola. And a parabola is a quadratic function. So this approximation essentially represents any log-posterior with a parabola. (p. 42, <em>emphasis</em> added)</p>
 </blockquote>
-<p>Though McElreath will use the quadratic approximation fir the first half of the text, we won’t use it much past this chapter. Here, though, we’ll apply the quadratic approximation to the globe tossing data with the <code>rethinking::quap()</code> function.</p>
+<p>Though McElreath will use the quadratic approximation for the first half of the text, we won’t use it much past this chapter. Here, though, we’ll apply the quadratic approximation to the globe tossing data with the <code>rethinking::quap()</code> function.</p>
 <div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="small-worlds-and-large-worlds.html#cb71-1"></a><span class="kw">library</span>(rethinking)</span>
 <span id="cb71-2"><a href="small-worlds-and-large-worlds.html#cb71-2"></a></span>
 <span id="cb71-3"><a href="small-worlds-and-large-worlds.html#cb71-3"></a>globe_qa &lt;-<span class="st"> </span><span class="kw">quap</span>(</span>
@@ -1790,34 +1810,33 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## p 0.6666662 0.1111104 0.4890903 0.8442422</code></pre>
 <div class="sourceCode" id="cb75"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb75-1"><a href="small-worlds-and-large-worlds.html#cb75-1"></a><span class="kw">precis</span>(globe_qa_<span class="dv">36</span>)</span></code></pre></div>
 <pre><code>##        mean         sd      5.5%     94.5%
-## p 0.6666664 0.07856692 0.5411013 0.7922315</code></pre>
+## p 0.6666668 0.07856688 0.5411017 0.7922318</code></pre>
 <p>Now make Figure 2.8.</p>
 <div class="sourceCode" id="cb77"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb77-1"><a href="small-worlds-and-large-worlds.html#cb77-1"></a>n_grid &lt;-<span class="st"> </span><span class="dv">100</span></span>
 <span id="cb77-2"><a href="small-worlds-and-large-worlds.html#cb77-2"></a></span>
-<span id="cb77-3"><a href="small-worlds-and-large-worlds.html#cb77-3"></a><span class="co"># wrangle</span></span>
-<span id="cb77-4"><a href="small-worlds-and-large-worlds.html#cb77-4"></a>Grid &lt;-</span>
-<span id="cb77-5"><a href="small-worlds-and-large-worlds.html#cb77-5"></a><span class="st">  </span><span class="kw">tibble</span>(</span>
-<span id="cb77-6"><a href="small-worlds-and-large-worlds.html#cb77-6"></a>    <span class="dt">w =</span> <span class="kw">c</span>(<span class="dv">6</span>, <span class="dv">12</span>, <span class="dv">24</span>),</span>
-<span id="cb77-7"><a href="small-worlds-and-large-worlds.html#cb77-7"></a>    <span class="dt">n =</span> <span class="kw">c</span>(<span class="dv">9</span>, <span class="dv">18</span>, <span class="dv">36</span>),</span>
-<span id="cb77-8"><a href="small-worlds-and-large-worlds.html#cb77-8"></a>    <span class="dt">s =</span> <span class="kw">c</span>(.<span class="dv">16</span>, <span class="fl">.11</span>, <span class="fl">.08</span>)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb77-9"><a href="small-worlds-and-large-worlds.html#cb77-9"></a><span class="st">  </span><span class="kw">expand</span>(</span>
-<span id="cb77-10"><a href="small-worlds-and-large-worlds.html#cb77-10"></a>    <span class="kw">nesting</span>(w, n, s),</span>
-<span id="cb77-11"><a href="small-worlds-and-large-worlds.html#cb77-11"></a>    <span class="dt">p =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> n_grid)) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb77-12"><a href="small-worlds-and-large-worlds.html#cb77-12"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
-<span id="cb77-13"><a href="small-worlds-and-large-worlds.html#cb77-13"></a>    <span class="dt">prior =</span> <span class="dv">1</span>,</span>
-<span id="cb77-14"><a href="small-worlds-and-large-worlds.html#cb77-14"></a>    <span class="dt">m     =</span> <span class="fl">.67</span>,  </span>
-<span id="cb77-15"><a href="small-worlds-and-large-worlds.html#cb77-15"></a>    <span class="dt">likelihood =</span> <span class="kw">dbinom</span>(w, <span class="dt">size =</span> n, <span class="dt">prob =</span> p), </span>
-<span id="cb77-16"><a href="small-worlds-and-large-worlds.html#cb77-16"></a>    <span class="dt">unstd_grid_posterior =</span> likelihood <span class="op">*</span><span class="st"> </span>prior,</span>
-<span id="cb77-17"><a href="small-worlds-and-large-worlds.html#cb77-17"></a>    <span class="dt">unstd_quad_posterior =</span> <span class="kw">dnorm</span>(p, m, s)) <span class="op">%&gt;%</span></span>
-<span id="cb77-18"><a href="small-worlds-and-large-worlds.html#cb77-18"></a><span class="st">  </span><span class="kw">group_by</span>(w) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb77-19"><a href="small-worlds-and-large-worlds.html#cb77-19"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
-<span id="cb77-20"><a href="small-worlds-and-large-worlds.html#cb77-20"></a>    <span class="dt">grid_posterior =</span> unstd_grid_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_grid_posterior),</span>
-<span id="cb77-21"><a href="small-worlds-and-large-worlds.html#cb77-21"></a>    <span class="dt">quad_posterior =</span> unstd_quad_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_quad_posterior),</span>
-<span id="cb77-22"><a href="small-worlds-and-large-worlds.html#cb77-22"></a>    <span class="dt">n              =</span> <span class="kw">reorder</span>(<span class="kw">str_c</span>(<span class="st">&quot;n = &quot;</span>, n), n))</span>
-<span id="cb77-23"><a href="small-worlds-and-large-worlds.html#cb77-23"></a></span>
-<span id="cb77-24"><a href="small-worlds-and-large-worlds.html#cb77-24"></a>Grid <span class="op">%&gt;%</span><span class="st">                 </span><span class="co"># sanity check; make sure we have the number of rows we expect.</span></span>
-<span id="cb77-25"><a href="small-worlds-and-large-worlds.html#cb77-25"></a><span class="st">  </span><span class="kw">group_by</span>(w, n, s) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb77-26"><a href="small-worlds-and-large-worlds.html#cb77-26"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">rows =</span> <span class="kw">n</span>())</span></code></pre></div>
+<span id="cb77-3"><a href="small-worlds-and-large-worlds.html#cb77-3"></a>Grid &lt;-</span>
+<span id="cb77-4"><a href="small-worlds-and-large-worlds.html#cb77-4"></a><span class="st">  </span><span class="kw">tibble</span>(</span>
+<span id="cb77-5"><a href="small-worlds-and-large-worlds.html#cb77-5"></a>    <span class="dt">w =</span> <span class="kw">c</span>(<span class="dv">6</span>, <span class="dv">12</span>, <span class="dv">24</span>),</span>
+<span id="cb77-6"><a href="small-worlds-and-large-worlds.html#cb77-6"></a>    <span class="dt">n =</span> <span class="kw">c</span>(<span class="dv">9</span>, <span class="dv">18</span>, <span class="dv">36</span>),</span>
+<span id="cb77-7"><a href="small-worlds-and-large-worlds.html#cb77-7"></a>    <span class="dt">s =</span> <span class="kw">c</span>(.<span class="dv">16</span>, <span class="fl">.11</span>, <span class="fl">.08</span>)) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb77-8"><a href="small-worlds-and-large-worlds.html#cb77-8"></a><span class="st">  </span><span class="kw">expand</span>(</span>
+<span id="cb77-9"><a href="small-worlds-and-large-worlds.html#cb77-9"></a>    <span class="kw">nesting</span>(w, n, s),</span>
+<span id="cb77-10"><a href="small-worlds-and-large-worlds.html#cb77-10"></a>    <span class="dt">p =</span> <span class="kw">seq</span>(<span class="dt">from =</span> <span class="dv">0</span>, <span class="dt">to =</span> <span class="dv">1</span>, <span class="dt">length.out =</span> n_grid)) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb77-11"><a href="small-worlds-and-large-worlds.html#cb77-11"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb77-12"><a href="small-worlds-and-large-worlds.html#cb77-12"></a>    <span class="dt">prior =</span> <span class="dv">1</span>,</span>
+<span id="cb77-13"><a href="small-worlds-and-large-worlds.html#cb77-13"></a>    <span class="dt">m     =</span> <span class="fl">.67</span>,  </span>
+<span id="cb77-14"><a href="small-worlds-and-large-worlds.html#cb77-14"></a>    <span class="dt">likelihood =</span> <span class="kw">dbinom</span>(w, <span class="dt">size =</span> n, <span class="dt">prob =</span> p), </span>
+<span id="cb77-15"><a href="small-worlds-and-large-worlds.html#cb77-15"></a>    <span class="dt">unstd_grid_posterior =</span> likelihood <span class="op">*</span><span class="st"> </span>prior,</span>
+<span id="cb77-16"><a href="small-worlds-and-large-worlds.html#cb77-16"></a>    <span class="dt">unstd_quad_posterior =</span> <span class="kw">dnorm</span>(p, m, s)) <span class="op">%&gt;%</span></span>
+<span id="cb77-17"><a href="small-worlds-and-large-worlds.html#cb77-17"></a><span class="st">  </span><span class="kw">group_by</span>(w) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb77-18"><a href="small-worlds-and-large-worlds.html#cb77-18"></a><span class="st">  </span><span class="kw">mutate</span>(</span>
+<span id="cb77-19"><a href="small-worlds-and-large-worlds.html#cb77-19"></a>    <span class="dt">grid_posterior =</span> unstd_grid_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_grid_posterior),</span>
+<span id="cb77-20"><a href="small-worlds-and-large-worlds.html#cb77-20"></a>    <span class="dt">quad_posterior =</span> unstd_quad_posterior <span class="op">/</span><span class="st"> </span><span class="kw">sum</span>(unstd_quad_posterior),</span>
+<span id="cb77-21"><a href="small-worlds-and-large-worlds.html#cb77-21"></a>    <span class="dt">n              =</span> <span class="kw">reorder</span>(<span class="kw">str_c</span>(<span class="st">&quot;n = &quot;</span>, n), n))</span>
+<span id="cb77-22"><a href="small-worlds-and-large-worlds.html#cb77-22"></a></span>
+<span id="cb77-23"><a href="small-worlds-and-large-worlds.html#cb77-23"></a>Grid <span class="op">%&gt;%</span><span class="st">                 </span><span class="co"># sanity check; make sure we have the number of rows we expect.</span></span>
+<span id="cb77-24"><a href="small-worlds-and-large-worlds.html#cb77-24"></a><span class="st">  </span><span class="kw">group_by</span>(w, n, s) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb77-25"><a href="small-worlds-and-large-worlds.html#cb77-25"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">rows =</span> <span class="kw">n</span>())</span></code></pre></div>
 <pre><code>## `summarise()` has grouped output by &#39;w&#39;, &#39;n&#39;. You can override using the `.groups` argument.</code></pre>
 <pre><code>## # A tibble: 3 x 4
 ## # Groups:   w, n [3]
@@ -1826,6 +1845,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 ## 1     6 n = 9   0.16   100
 ## 2    12 n = 18  0.11   100
 ## 3    24 n = 36  0.08   100</code></pre>
+<p>A new function is introduced here: <code>expand()</code>. This works something like <code>grid_expand()</code>.</p>
+<ul>
+<li><p>The first input is a data frame rather than vectors. Our initial use of
+<code>tibble()</code> is building that input.</p></li>
+<li><p>We have some finer control over how the expansion happens. In this case,
+<code>nesting(w, n, s)</code> doesn’t talk all combinations of those values, only the ones
+that appear in the data frame. (It’s really make a new column with all three values combined.)</p></li>
+<li><p>Each of these combinations of <code>w</code>, <code>n</code>, and <code>s</code> is paired with each value of <code>p</code>, just like
+when using <code>expand_grid()</code>.</p></li>
+</ul>
 <div class="sourceCode" id="cb80"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb80-1"><a href="small-worlds-and-large-worlds.html#cb80-1"></a>Grid <span class="op">%&gt;%</span><span class="st"> </span></span>
 <span id="cb80-2"><a href="small-worlds-and-large-worlds.html#cb80-2"></a><span class="st">  </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> p)) <span class="op">+</span></span>
 <span id="cb80-3"><a href="small-worlds-and-large-worlds.html#cb80-3"></a><span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y =</span> grid_posterior)) <span class="op">+</span></span>

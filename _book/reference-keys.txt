@@ -377,3 +377,4 @@ parting-wisdom
 ggformula
 more-from-a-solomon-kurz
 some-notes-on-coding-style-before-we-begin-four-cs
+vampire-diversion
